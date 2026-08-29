@@ -2,13 +2,13 @@ import React, { useState, useMemo } from 'react';
 import { Timer, ArrowRightLeft, CheckCircle2, AlertCircle, ShieldAlert, Sparkles, Gauge, Fuel, Leaf, DollarSign } from 'lucide-react';
 import { BACKHAUL_OPPORTUNITIES, EAST_COAST_PORT_MATRIX, calculateVirtualArrival } from '../services/optimizerEngine';
 
-export default function IdleScenarioManager({ bestSolution, selectedPortKey, cargoQuantity, bunkerPrice = 640 }) {
+export default function IdleScenarioManager({ bestSolution, selectedPortKey, cargoQuantity, bunkerPrice = 629.0, backendTurnaround }) {
   const [selectedBackhaul, setSelectedBackhaul] = useState(BACKHAUL_OPPORTUNITIES[0]);
   const [slowSteamingSpeed, setSlowSteamingSpeed] = useState(11.2);
 
   const activePort = EAST_COAST_PORT_MATRIX[selectedPortKey] || EAST_COAST_PORT_MATRIX.Dhamra;
-  const turnaroundDays = bestSolution ? bestSolution.totalTurnaroundDays : 18.5;
-  const sailingDays = bestSolution ? bestSolution.sailingDays : 8.0;
+  const turnaroundDays = bestSolution ? (bestSolution.totalTurnaroundDays || bestSolution.totalVoyageDays || 18.5) : 18.5;
+  const sailingDays = bestSolution ? (bestSolution.sailingDays || bestSolution.seaDaysOneWay || 8.0) : 8.0;
   const dischargeDays = Number((cargoQuantity / activePort.dailyDischargeRate).toFixed(1));
   const waitingDays = activePort.avgWaitingDays;
   const demurrageExposure = Math.round(waitingDays * activePort.demurrageRatePerDay);
@@ -21,10 +21,32 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
 
   // Virtual Arrival Calculation
   const virtualArrival = useMemo(() => {
-    const baseSpeed = bestSolution ? bestSolution.vessel.speedKnots : 13.5;
-    const distanceNM = bestSolution ? bestSolution.distanceNM : 2550;
-    const dailyRate = bestSolution ? bestSolution.costBreakdown.dailyRate : 22000;
-    const baseBunkerTons = bestSolution ? bestSolution.vessel.bunkerConsumptionTonsPerDay : 42;
+    if (backendTurnaround && backendTurnaround.virtualArrival) {
+      const va = backendTurnaround.virtualArrival;
+      return {
+        baseSpeedKnots: va.baseSpeedKnots,
+        slowSpeedKnots: va.optimalSpeedKnots,
+        distanceNM: 2520,
+        standardSailingDays: va.baseTransitDays,
+        slowSailingDays: va.virtualArrivalDays,
+        additionalSailingDays: Number((va.virtualArrivalDays - va.baseTransitDays).toFixed(1)),
+        berthQueueDays: waitingDays,
+        absorbedDemurrageDays: va.waitingDaysAbsorbed,
+        remainingWaitingDays: Number((waitingDays - va.waitingDaysAbsorbed).toFixed(1)),
+        fuelSavedDollars: va.fuelSavingsUSD,
+        fuelSavedTons: va.fuelSavedTons,
+        demurrageAvoidedDollars: va.demurrageAvoidedUSD,
+        netVoyageSavingsDollars: va.netEconomicBenefitUSD,
+        co2AvoidedTons: va.co2ReductionTons,
+        standardTotalCost: va.fuelSavingsUSD * 3,
+        slowTotalCost: va.fuelSavingsUSD * 2
+      };
+    }
+
+    const baseSpeed = bestSolution ? (bestSolution.vessel?.speedKnots || 13.5) : 13.5;
+    const distanceNM = bestSolution ? (bestSolution.distanceNM || 2550) : 2550;
+    const dailyRate = bestSolution ? (bestSolution.costBreakdown?.dailyRate || bestSolution.dailyCharterRate || 22000) : 22000;
+    const baseBunkerTons = bestSolution ? (bestSolution.vessel?.bunkerConsumptionTonsPerDay || 42) : 42;
 
     return calculateVirtualArrival({
       baseSpeedKnots: baseSpeed,
@@ -36,7 +58,7 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
       berthQueueDays: waitingDays,
       demurrageRatePerDay: activePort.demurrageRatePerDay
     });
-  }, [bestSolution, slowSteamingSpeed, waitingDays, activePort.demurrageRatePerDay, bunkerPrice]);
+  }, [backendTurnaround, bestSolution, slowSteamingSpeed, waitingDays, activePort.demurrageRatePerDay, bunkerPrice]);
 
   return (
     <div className="space-y-6">
@@ -63,7 +85,7 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
             <div className="text-[10px] uppercase font-bold text-slate-400">Total Roundtrip Turnaround</div>
             <div className="text-2xl font-mono font-extrabold text-white">{turnaroundDays} Days</div>
             <div className="text-[11px] text-amber-400 font-semibold mt-0.5">
-              Demurrage Risk: ${demurrageExposure.toLocaleString()}
+              Demurrage Risk: ${Number(demurrageExposure || 0).toLocaleString()}
             </div>
           </div>
         </div>
@@ -123,7 +145,7 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
               <span>Net Voyage Savings</span>
             </div>
             <div className="text-xl font-mono font-black text-emerald-400">
-              ${virtualArrival.netVoyageSavingsDollars.toLocaleString()}
+              ${Number(virtualArrival?.netVoyageSavingsDollars || 0).toLocaleString()}
             </div>
             <span className="text-[10px] text-slate-400">Fuel & Demurrage Combined</span>
           </div>
@@ -134,9 +156,9 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
               <span>Bunker Fuel Saved</span>
             </div>
             <div className="text-xl font-mono font-black text-cyan-300">
-              {virtualArrival.fuelSavedTons} MT
+              {virtualArrival?.fuelSavedTons || 0} MT
             </div>
-            <span className="text-[10px] text-slate-400">${virtualArrival.fuelSavedDollars.toLocaleString()} Saved</span>
+            <span className="text-[10px] text-slate-400">${Number(virtualArrival?.fuelSavedDollars || 0).toLocaleString()} Saved</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
@@ -145,9 +167,9 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
               <span>Queue Absorbed</span>
             </div>
             <div className="text-xl font-mono font-black text-amber-400">
-              {virtualArrival.absorbedDemurrageDays} Days
+              {virtualArrival?.absorbedDemurrageDays || 0} Days
             </div>
-            <span className="text-[10px] text-slate-400">${virtualArrival.demurrageAvoidedDollars.toLocaleString()} Demurrage Cut</span>
+            <span className="text-[10px] text-slate-400">${Number(virtualArrival?.demurrageAvoidedDollars || 0).toLocaleString()} Demurrage Cut</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
@@ -171,7 +193,7 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
             </span>
           </div>
           <span className="font-mono font-bold text-emerald-400 shrink-0">
-            +${virtualArrival.netVoyageSavingsDollars.toLocaleString()} ROI
+            +${Number(virtualArrival?.netVoyageSavingsDollars || 0).toLocaleString()} ROI
           </span>
         </div>
       </div>
@@ -263,7 +285,7 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
               </h3>
             </div>
             <p className="text-xs text-slate-500 mb-4">
-              Calculated demurrage cost at ${activePort.demurrageRatePerDay.toLocaleString()}/day penalty rate
+              Calculated demurrage cost at ${Number(activePort?.demurrageRatePerDay || 22000).toLocaleString()}/day penalty rate
             </p>
 
             <div className="space-y-3 font-mono text-xs">
@@ -273,11 +295,11 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
               </div>
               <div className="flex justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200">
                 <span className="text-slate-500">Demurrage Penalty Rate:</span>
-                <strong className="text-rose-600">${activePort.demurrageRatePerDay.toLocaleString()}/day</strong>
+                <strong className="text-rose-600">${Number(activePort?.demurrageRatePerDay || 22000).toLocaleString()}/day</strong>
               </div>
               <div className="flex justify-between p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-900">
                 <span className="font-bold">Total Expected Demurrage:</span>
-                <strong className="text-base font-black">${demurrageExposure.toLocaleString()}</strong>
+                <strong className="text-base font-black">${Number(demurrageExposure || 0).toLocaleString()}</strong>
               </div>
             </div>
           </div>
@@ -372,7 +394,7 @@ export default function IdleScenarioManager({ bestSolution, selectedPortKey, car
           <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 text-right min-w-[200px] shrink-0">
             <div className="text-[10px] uppercase font-bold text-slate-400">Net Voyage Financial Benefit</div>
             <div className="text-2xl font-mono font-black text-emerald-400">
-              +${selectedBackhaul.potentialNetBenefitDollars.toLocaleString()}
+              +${Number(selectedBackhaul?.potentialNetBenefitDollars || 0).toLocaleString()}
             </div>
             <div className="text-[10px] text-purple-300 mt-0.5">
               Reduces empty ballast time by {selectedBackhaul.ballastReductionPercent}%

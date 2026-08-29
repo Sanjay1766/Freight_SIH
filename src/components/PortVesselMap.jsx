@@ -60,12 +60,12 @@ export default function PortVesselMap({ selectedPortKey, onPortChange, selectedO
           <div className="flex items-center gap-3 font-mono text-xs bg-slate-900/90 px-4 py-2 rounded-xl border border-slate-800">
             <div>
               <span className="text-slate-400 block text-[10px]">Distance:</span>
-              <strong className="text-[#FF3B00] text-sm">{activeDistance.toLocaleString()} NM</strong>
+              <strong className="text-[#FF3B00] text-sm">{Number(activeDistance || 2500).toLocaleString()} NM</strong>
             </div>
             <div className="h-6 w-px bg-slate-700" />
             <div>
               <span className="text-slate-400 block text-[10px]">Sailing Time (13.5 kn):</span>
-              <strong className="text-cyan-400 text-sm">{Number((activeDistance / (13.5 * 24)).toFixed(1))} Days</strong>
+              <strong className="text-cyan-400 text-sm">{Number((Number(activeDistance || 2500) / (13.5 * 24)).toFixed(1))} Days</strong>
             </div>
           </div>
         </div>
@@ -205,7 +205,7 @@ export default function PortVesselMap({ selectedPortKey, onPortChange, selectedO
         <div>
           <span className="text-slate-400 block font-sans font-medium">Discharge Rate & Tariff:</span>
           <strong className="text-slate-900">{(activePort.dailyDischargeRate / 1000).toFixed(0)}k MT/day • ${activePort.portTariffPerTon}/MT</strong>
-          <span className="text-amber-600 block text-[11px]">Demurrage: ${activePort.demurrageRatePerDay.toLocaleString()}/day</span>
+          <span className="text-amber-600 block text-[11px]">Demurrage: ${Number(activePort.demurrageRatePerDay || 22000).toLocaleString()}/day</span>
         </div>
         <div>
           <span className="text-slate-400 block font-sans font-medium">Tidal & Navigation Profile:</span>
@@ -262,7 +262,7 @@ export default function PortVesselMap({ selectedPortKey, onPortChange, selectedO
                 </div>
 
                 <div className="text-[11px] text-slate-500 font-mono flex justify-between">
-                  <span>{v.vesselClass} ({v.dwt.toLocaleString()} DWT)</span>
+                  <span>{v.vesselClass} ({Number(v.dwt || 75000).toLocaleString()} DWT)</span>
                   <span>Draft: {v.draft}m</span>
                 </div>
 

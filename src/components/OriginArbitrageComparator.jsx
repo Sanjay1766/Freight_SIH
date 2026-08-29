@@ -10,9 +10,10 @@ export default function OriginArbitrageComparator({
   bunkerPrice,
   selectedHorizonForecast,
   decisionTrigger,
-  onSelectOrigin
+  onSelectOrigin,
+  arbitrageData
 }) {
-  const arbitrage = solveMultiOriginArbitrage({
+  const arbitrageFallback = solveMultiOriginArbitrage({
     destinationPortKey: selectedPortKey,
     cargoQuantityTons: cargoQuantity,
     bunkerPrice,
@@ -20,8 +21,37 @@ export default function OriginArbitrageComparator({
     decisionTrigger
   });
 
-  const chartData = arbitrage.originsComparison.map(item => ({
-    name: `${item.country} (${item.originKey.split('_')[1]})`,
+  const rawOrigins = (arbitrageData && arbitrageData.length > 0)
+    ? arbitrageData.map(item => ({
+        originKey: item.originKey,
+        originName: item.originName || item.originKey,
+        country: item.country,
+        commodity: item.commodity,
+        caloricValueKcal: item.caloricValueKcal || 5500,
+        fobPrice: item.fobPriceUSD ?? item.fobPrice ?? 0,
+        distanceNM: item.distanceNM || 3000,
+        seaDays: item.transitDaysOneWay || 10,
+        freightPerTon: item.freightCostPerTon ?? item.freightPerTon ?? 0,
+        totalLandedCostPerTon: item.landedCostPerTon ?? item.totalLandedCostPerTon ?? 0,
+        costPerGigajoule: item.energyCostPerGJ ?? item.costPerGigajoule ?? 0,
+        ciiGrade: item.ciiGrade || 'B',
+        co2Tons: 1500,
+        chokepoints: item.chokepoints || []
+      }))
+    : arbitrageFallback.originsComparison;
+
+  const lowestLanded = [...rawOrigins].sort((a, b) => a.totalLandedCostPerTon - b.totalLandedCostPerTon)[0] || rawOrigins[0];
+  const lowestEnergy = [...rawOrigins].sort((a, b) => a.costPerGigajoule - b.costPerGigajoule)[0] || rawOrigins[0];
+
+  const arbitrage = {
+    destinationPort: EAST_COAST_PORT_MATRIX[selectedPortKey] || arbitrageFallback.destinationPort,
+    originsComparison: rawOrigins,
+    lowestLandedOrigin: lowestLanded,
+    lowestEnergyOrigin: lowestEnergy
+  };
+
+  const chartData = rawOrigins.map(item => ({
+    name: `${item.country} (${(item.originKey || '').split('_')[1] || item.country})`,
     originKey: item.originKey,
     fobCost: item.fobPrice,
     freightCost: item.freightPerTon,
@@ -97,7 +127,7 @@ export default function OriginArbitrageComparator({
               <span>Best Energy Caloric Value ($/GJ)</span>
             </div>
             <div className="text-lg font-black text-slate-900 font-heading mt-1">
-              {arbitrage.lowestEnergyOrigin.country} ({arbitrage.lowestEnergyOrigin.caloricValueKcal.toLocaleString()} kcal/kg)
+              {arbitrage.lowestEnergyOrigin.country} ({Number(arbitrage?.lowestEnergyOrigin?.caloricValueKcal || 5500).toLocaleString()} kcal/kg)
             </div>
             <div className="text-xs text-slate-600 mt-0.5">
               High thermal yield minimizes total fuel volume required by Indian boilers
@@ -168,34 +198,34 @@ export default function OriginArbitrageComparator({
                   </td>
                   <td className="py-3 px-3">
                     <div className="font-semibold text-slate-800">{item.commodity}</div>
-                    <div className="text-[10px] font-mono text-blue-600">{item.caloricValueKcal.toLocaleString()} kcal/kg • ${item.costPerGigajoule}/GJ</div>
+                    <div className="text-[10px] font-mono text-blue-600">{Number(item.caloricValueKcal || 5500).toLocaleString()} kcal/kg • ${item.costPerGigajoule}/GJ</div>
                   </td>
                   <td className="py-3 px-3 font-mono font-bold text-slate-700">
                     ${item.fobPrice}/MT
                   </td>
                   <td className="py-3 px-3">
                     <div className="font-mono font-bold text-[#FF3B00]">${item.freightPerTon}/MT</div>
-                    <div className="text-[10px] text-slate-500">{item.transitDays} Days • {item.distanceNM.toLocaleString()} NM</div>
+                    <div className="text-[10px] text-slate-400 font-mono">{item.seaDays}d sea • {Number(item.distanceNM || 3000).toLocaleString()} NM</div>
                   </td>
                   <td className="py-3 px-3 font-mono font-black text-sm text-slate-900">
                     ${item.totalLandedCostPerTon}
                   </td>
                   <td className="py-3 px-3">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      item.ciiGrade === 'A' ? 'bg-emerald-100 text-emerald-700' :
-                      item.ciiGrade === 'B' ? 'bg-blue-100 text-blue-700' :
-                      item.ciiGrade === 'C' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono ${
+                      item.ciiGrade === 'A' ? 'bg-emerald-100 text-emerald-800' :
+                      item.ciiGrade === 'B' ? 'bg-blue-100 text-blue-800' :
+                      item.ciiGrade === 'C' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
                     }`}>
-                      Grade {item.ciiGrade}
+                      CII {item.ciiGrade}
                     </span>
                   </td>
                   <td className="py-3 px-3 text-right">
                     <button
-                      onClick={() => onSelectOrigin && onSelectOrigin(item.originKey)}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-800 hover:bg-slate-700 text-white transition-colors inline-flex items-center gap-1 shadow-sm"
+                      onClick={() => onSelectOrigin(item.originKey)}
+                      className="px-2.5 py-1 rounded bg-slate-900 hover:bg-[#FF3B00] text-white text-[10px] font-bold transition-colors inline-flex items-center gap-1 shadow-sm"
                     >
-                      <span>Route</span>
-                      <ArrowRight className="w-3 h-3 text-[#FF3B00]" />
+                      <span>Simulate</span>
+                      <ArrowRight className="w-3 h-3" />
                     </button>
                   </td>
                 </tr>

@@ -1,9 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Cpu, ArrowUpRight, ArrowDownRight, HelpCircle } from 'lucide-react';
 import { computeShapWaterfall } from '../services/forecastingEngine';
+import { fetchShapValues } from '../services/apiClient';
 
 export default function ShapWaterfall({ selectedHorizonForecast, lastHistoryPoint }) {
-  const shapFeatures = computeShapWaterfall(selectedHorizonForecast, lastHistoryPoint);
+  const [shapFeatures, setShapFeatures] = useState([]);
+
+  useEffect(() => {
+    async function loadShap() {
+      if (!selectedHorizonForecast?.horizon) return;
+      const data = await fetchShapValues(selectedHorizonForecast.horizon);
+      if (data && data.features) {
+        setShapFeatures(data.features);
+      } else {
+        setShapFeatures(computeShapWaterfall(selectedHorizonForecast, lastHistoryPoint));
+      }
+    }
+    loadShap();
+  }, [selectedHorizonForecast, lastHistoryPoint]);
+
+  if (!shapFeatures || shapFeatures.length === 0) {
+    return null;
+  }
 
   return (
     <div className="card-clean p-6 relative">
@@ -19,14 +37,14 @@ export default function ShapWaterfall({ selectedHorizonForecast, lastHistoryPoin
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Feature contribution breakdown driving point forecast for horizon H={selectedHorizonForecast.horizon}D
+            Feature contribution breakdown driving point forecast for horizon H={Number(selectedHorizonForecast.horizon || 0)}D
           </p>
         </div>
 
         <div className="text-right">
           <div className="text-[10px] font-bold text-slate-500 uppercase">Target Rate</div>
           <div className="text-base font-mono font-bold text-[#FF3B00]">
-            ${selectedHorizonForecast.pointForecast.toLocaleString()}/day
+            ${Number(selectedHorizonForecast.pointForecast || 0).toLocaleString()}/day
           </div>
         </div>
       </div>
@@ -62,7 +80,7 @@ export default function ShapWaterfall({ selectedHorizonForecast, lastHistoryPoin
                 <span className={`font-mono font-bold ${
                   isTotal ? 'text-[#FF3B00] text-sm' : isBase ? 'text-slate-800' : isPositive ? 'text-emerald-700' : 'text-rose-700'
                 }`}>
-                  {isBase || isTotal ? `$${feat.value.toLocaleString()}` : `${isPositive ? '+' : ''}$${feat.value.toLocaleString()}`}
+                  {isBase || isTotal ? `$${Number(feat.value || 0).toLocaleString()}` : `${isPositive ? '+' : ''}$${Number(feat.value || 0).toLocaleString()}`}
                 </span>
               </div>
 
@@ -73,7 +91,7 @@ export default function ShapWaterfall({ selectedHorizonForecast, lastHistoryPoin
                       isPositive ? 'bg-emerald-500' : 'bg-rose-500'
                     }`}
                     style={{
-                      width: `${Math.min(100, (Math.abs(feat.value) / 4000) * 100)}%`
+                      width: `${Math.min(100, (Math.abs(Number(feat.value || 0)) / 4000) * 100)}%`
                     }}
                   />
                 </div>

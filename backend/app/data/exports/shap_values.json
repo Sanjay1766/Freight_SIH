@@ -1,0 +1,162 @@
+{
+  "base_value": 20242.1,
+  "num_test_samples": 45,
+  "features": [
+    {
+      "name": "lag_1",
+      "display_name": "Spot Rate Lag 1-Day",
+      "mean_abs_shap": 1015.14,
+      "mean_signed_shap": 1015.14
+    },
+    {
+      "name": "lag_3",
+      "display_name": "Spot Rate Lag 3-Day",
+      "mean_abs_shap": 320.57,
+      "mean_signed_shap": 320.57
+    },
+    {
+      "name": "lag_7",
+      "display_name": "Spot Rate Lag 7-Day",
+      "mean_abs_shap": 143.47,
+      "mean_signed_shap": 133.01
+    },
+    {
+      "name": "lag_14",
+      "display_name": "Spot Rate Lag 14-Day",
+      "mean_abs_shap": 165.93,
+      "mean_signed_shap": 165.93
+    },
+    {
+      "name": "lag_30",
+      "display_name": "Spot Rate Lag 30-Day",
+      "mean_abs_shap": 60.97,
+      "mean_signed_shap": 60.97
+    },
+    {
+      "name": "rolling_mean_7",
+      "display_name": "Rolling Mean 7-Day",
+      "mean_abs_shap": 520.13,
+      "mean_signed_shap": 520.13
+    },
+    {
+      "name": "rolling_mean_14",
+      "display_name": "Rolling Mean 14-Day",
+      "mean_abs_shap": 281.83,
+      "mean_signed_shap": 281.83
+    },
+    {
+      "name": "rolling_mean_30",
+      "display_name": "Rolling Mean 30-Day",
+      "mean_abs_shap": 430.43,
+      "mean_signed_shap": 430.43
+    },
+    {
+      "name": "rolling_vol_7",
+      "display_name": "Rolling Volatility 7-Day",
+      "mean_abs_shap": 4.65,
+      "mean_signed_shap": -3.57
+    },
+    {
+      "name": "rolling_vol_30",
+      "display_name": "Rolling Volatility 30-Day",
+      "mean_abs_shap": 48.67,
+      "mean_signed_shap": 45.07
+    },
+    {
+      "name": "mti_india",
+      "display_name": "Market Tightness (MTI_India)",
+      "mean_abs_shap": 113.72,
+      "mean_signed_shap": 100.79
+    },
+    {
+      "name": "mti_ma7",
+      "display_name": "MTI 7-Day Moving Avg",
+      "mean_abs_shap": 17.29,
+      "mean_signed_shap": -17.29
+    },
+    {
+      "name": "mti_momentum_7",
+      "display_name": "MTI 7-Day Momentum",
+      "mean_abs_shap": 9.85,
+      "mean_signed_shap": 2.56
+    },
+    {
+      "name": "bunker_fuel",
+      "display_name": "Bunker Fuel Price (VLSFO)",
+      "mean_abs_shap": 14.54,
+      "mean_signed_shap": 8.25
+    },
+    {
+      "name": "bunker_pct_change_7",
+      "display_name": "Bunker 7-Day % Change",
+      "mean_abs_shap": 2.68,
+      "mean_signed_shap": -0.01
+    },
+    {
+      "name": "coal_index",
+      "display_name": "Newcastle / Global Coal Index",
+      "mean_abs_shap": 7.84,
+      "mean_signed_shap": -3.62
+    },
+    {
+      "name": "coal_pct_change_14",
+      "display_name": "Coal 14-Day % Change",
+      "mean_abs_shap": 8.14,
+      "mean_signed_shap": 0.84
+    },
+    {
+      "name": "indo_coal_index",
+      "display_name": "Indonesian Coal Index (HBA)",
+      "mean_abs_shap": 21.67,
+      "mean_signed_shap": -11.37
+    },
+    {
+      "name": "dxy",
+      "display_name": "USD Currency Index (DXY)",
+      "mean_abs_shap": 43.2,
+      "mean_signed_shap": -25.23
+    },
+    {
+      "name": "dxy_delta_7",
+      "display_name": "DXY 7-Day Delta",
+      "mean_abs_shap": 2.44,
+      "mean_signed_shap": 0.66
+    },
+    {
+      "name": "bci_bdi_ratio",
+      "display_name": "Capesize/BDI Ratio",
+      "mean_abs_shap": 4.37,
+      "mean_signed_shap": -0.24
+    },
+    {
+      "name": "bpi_bdi_ratio",
+      "display_name": "Panamax/BDI Ratio",
+      "mean_abs_shap": 5.03,
+      "mean_signed_shap": 1.86
+    },
+    {
+      "name": "sin_day_of_year",
+      "display_name": "Seasonality (sin)",
+      "mean_abs_shap": 15.21,
+      "mean_signed_shap": 3.17
+    },
+    {
+      "name": "cos_day_of_year",
+      "display_name": "Seasonality (cos)",
+      "mean_abs_shap": 59.69,
+      "mean_signed_shap": 57.02
+    },
+    {
+      "name": "is_monsoon_season",
+      "display_name": "Monsoon Season Flag",
+      "mean_abs_shap": 10.35,
+      "mean_signed_shap": 10.35
+    },
+    {
+      "name": "is_prewinter_restocking",
+      "display_name": "Pre-Winter Restocking Flag",
+      "mean_abs_shap": 6.48,
+      "mean_signed_shap": 6.48
+    }
+  ]
+}

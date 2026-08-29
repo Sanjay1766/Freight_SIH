@@ -4,10 +4,10 @@ import { Bot, Send, X, Sparkles } from 'lucide-react';
 export default function CopilotAssistant({
   isOpen,
   onClose,
-  selectedHorizonForecast,
-  decisionTrigger,
-  selectedPortKey,
-  selectedOriginKey
+  selectedHorizonForecast = {},
+  decisionTrigger = {},
+  selectedPortKey = 'Paradip',
+  selectedOriginKey = 'Indonesia_Samarinda'
 }) {
   const [messages, setMessages] = useState([
     {
@@ -43,12 +43,17 @@ export default function CopilotAssistant({
     } else if (qLower.includes('haldia') || qLower.includes('lightering') || qLower.includes('sandheads')) {
       responseText = `Haldia Dock Complex has an estuarine Hugli river draft limitation of only **8.5 meters**. Any parcel exceeding ~25,000 MT or vessel with >8.5m draft must lighter at **Sagar-Sandheads Anchorage** (transshipping 50-60% into barges at $3.20/MT). For deep-draft full shipments, consider diverting to Dhamra (17.5m) or Gangavaram (18.5m).`;
     } else if (qLower.includes('coa') || qLower.includes('savings') || qLower.includes('spot')) {
-      const savingsEst = decisionTrigger.triggerActivated ? '$120,000 - $180,000' : '$80,000';
-      responseText = `Our prescriptive trigger currently recommends **${decisionTrigger.triggerActivated ? 'LOCKING IN A 3-VOYAGE COA' : 'OPERATING ON THE SPOT MARKET'}**. Forward 30-day rates are projected at $${selectedHorizonForecast.pointForecast.toLocaleString()}/day with volatility of $${selectedHorizonForecast.volatilityDollars.toLocaleString()}. Locking a 3-voyage fixture hedges against the upper 95% tail ($${selectedHorizonForecast.upper95.toLocaleString()}/day) with projected risk savings of **${savingsEst} per voyage**.`;
+      const isCoARecommended = decisionTrigger?.triggerActivated || decisionTrigger?.action === 'FIX_COA_NOW';
+      const savingsEst = isCoARecommended ? '$120,000 - $180,000' : '$80,000';
+      const ptFc = Number(selectedHorizonForecast?.pointForecast || 22000).toLocaleString();
+      const volDol = Number(selectedHorizonForecast?.volatilityDollars || 850).toLocaleString();
+      const up95 = Number(selectedHorizonForecast?.upper95 || 24000).toLocaleString();
+      responseText = `Our prescriptive trigger currently recommends **${isCoARecommended ? 'LOCKING IN A 3-VOYAGE COA' : 'OPERATING ON THE SPOT MARKET'}**. Forward 30-day rates are projected at $${ptFc}/day with volatility of $${volDol}. Locking a 3-voyage fixture hedges against the upper 95% tail ($${up95}/day) with projected risk savings of **${savingsEst} per voyage**.`;
     } else if (qLower.includes('backhaul') || qLower.includes('deadheading') || qLower.includes('vizag')) {
       responseText = `For vessels discharging at Visakhapatnam, our optimizer identifies **Metallurgical Alumina & Steel Coils (35k-60k MT)** bound for the Persian Gulf (Jebel Ali / Sohar) earning **+$260,000 net voyage benefit** and reducing uncompensated ballast deadheading by **65%**.`;
     } else {
-      responseText = `I evaluated your query against our East Coast Port Matrix (${selectedPortKey}) and origin (${selectedOriginKey}). Current spot forecast is $${selectedHorizonForecast.pointForecast.toLocaleString()}/day with landed cost of ~$22.50/MT. Volatility ratio is ${decisionTrigger.volMetricRatio} vs θ_risk ${decisionTrigger.thetaRisk}.`;
+      const ptFc = Number(selectedHorizonForecast?.pointForecast || 22000).toLocaleString();
+      responseText = `I evaluated your query against our East Coast Port Matrix (${selectedPortKey || 'Paradip'}) and origin (${selectedOriginKey || 'Indonesia_Samarinda'}). Current spot forecast is $${ptFc}/day with landed cost of ~$22.50/MT. Volatility ratio is ${decisionTrigger?.volMetricRatio || 0.12} vs θ_risk ${decisionTrigger?.thetaRisk || 0.20}.`;
     }
 
     setTimeout(() => {
@@ -152,4 +157,3 @@ export default function CopilotAssistant({
     </div>
   );
 }
-

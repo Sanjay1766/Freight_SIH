@@ -1,23 +1,43 @@
 import React from 'react';
-import { X, Printer, ShieldCheck, Ship, Anchor, Leaf } from 'lucide-react';
+import { X, Printer, ShieldCheck, Ship, Leaf } from 'lucide-react';
 import { EAST_COAST_PORT_MATRIX, ORIGIN_PORTS_MATRIX } from '../services/optimizerEngine';
 
 export default function ExecutiveReportModal({
   isOpen,
   onClose,
   bestSolution,
-  decisionTrigger,
-  selectedHorizonForecast,
-  selectedPortKey,
+  decisionTrigger = {},
+  selectedHorizonForecast = {},
+  selectedPortKey = 'Paradip',
   originPortKey = 'Indonesia_Samarinda',
   cargoQuantity = 75000,
   targetCoACost = 21500
 }) {
   if (!isOpen) return null;
 
-  const activePort = EAST_COAST_PORT_MATRIX[selectedPortKey] || EAST_COAST_PORT_MATRIX.Dhamra;
+  const activePort = EAST_COAST_PORT_MATRIX[selectedPortKey] || EAST_COAST_PORT_MATRIX.Paradip;
   const originPort = ORIGIN_PORTS_MATRIX[originPortKey] || ORIGIN_PORTS_MATRIX.Indonesia_Samarinda;
   const currentDateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Safe normalized vessel and cost metrics
+  const vesselName = bestSolution?.vessel?.name || 'MV Bharat Glory';
+  const vesselClass = bestSolution?.vessel?.vesselClass || 'Kamsarmax';
+  const vesselDwt = bestSolution?.vessel?.dwt || 82000;
+  const ciiGrade = bestSolution?.ciiGrade || bestSolution?.carbonMetrics?.ciiGrade || 'B';
+  const co2Tons = bestSolution?.co2Tons || bestSolution?.carbonMetrics?.co2EmissionsTons || 1250;
+
+  const dailyRate = bestSolution?.dailyCharterRate || bestSolution?.costBreakdown?.dailyRate || 22000;
+  const turnaroundDays = bestSolution?.totalVoyageDays || bestSolution?.totalTurnaroundDays || 18.5;
+  const seaDays = bestSolution?.seaDaysOneWay || bestSolution?.sailingDays || 8.0;
+  const fuelBurnPerDay = bestSolution?.vessel?.bunkerConsumptionTonsPerDay || 28;
+
+  const freightCost = bestSolution?.charterCost || bestSolution?.costBreakdown?.freightCost || (dailyRate * turnaroundDays);
+  const bunkerCost = bestSolution?.fuelCost || bestSolution?.costBreakdown?.bunkerCost || 350000;
+  const portTariffCost = bestSolution?.portTariffs || bestSolution?.costBreakdown?.portTariffCost || 290000;
+  const demurrageCost = bestSolution?.demurrageCost || bestSolution?.costBreakdown?.demurrageCost || 48000;
+  const lighteringCost = bestSolution?.lighteringCost || bestSolution?.costBreakdown?.lighteringSurcharge || 0;
+  const totalCost = bestSolution?.totalCost || bestSolution?.costBreakdown?.totalCost || (freightCost + bunkerCost + portTariffCost + demurrageCost + lighteringCost);
+  const costPerTon = bestSolution?.costPerTon || bestSolution?.costBreakdown?.costPerTon || (totalCost / cargoQuantity);
 
   const handlePrint = () => {
     window.print();
@@ -77,11 +97,11 @@ export default function ExecutiveReportModal({
               </div>
               <div>
                 <span className="text-slate-400 block">Parcel Volume:</span>
-                <strong className="text-slate-900">{cargoQuantity.toLocaleString()} MT</strong>
+                <strong className="text-slate-900">{Number(cargoQuantity).toLocaleString()} MT</strong>
               </div>
               <div>
                 <span className="text-slate-400 block">Forecast Horizon:</span>
-                <strong className="text-[#FF3B00]">{selectedHorizonForecast.horizon} Days Forward</strong>
+                <strong className="text-[#FF3B00]">{selectedHorizonForecast.horizon || 15} Days Forward</strong>
               </div>
             </div>
           </div>
@@ -91,139 +111,112 @@ export default function ExecutiveReportModal({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-[#FF3B00]">Prescriptive Action Trigger</span>
               <div className="flex items-center gap-2">
-                {bestSolution && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-900/80 text-emerald-300 border border-emerald-700 flex items-center gap-1">
-                    <Leaf className="w-3 h-3 text-emerald-400" /> IMO CII Grade {bestSolution.carbonMetrics.ciiGrade}
-                  </span>
-                )}
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-900/80 text-emerald-300 border border-emerald-700 flex items-center gap-1">
+                  <Leaf className="w-3 h-3 text-emerald-400" /> IMO CII Grade {ciiGrade}
+                </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-emerald-400 border border-slate-700">
-                  {decisionTrigger.triggerActivated ? 'COA HEDGE RECOMMENDED' : 'SPOT MARKET RECOMMENDED'}
+                  {decisionTrigger.triggerActivated || decisionTrigger.action === 'FIX_COA_NOW' ? 'COA HEDGE RECOMMENDED' : 'SPOT MARKET RECOMMENDED'}
                 </span>
               </div>
             </div>
 
             <h2 className="text-lg font-bold text-white font-heading">
-              {decisionTrigger.triggerActivated
-                ? `Execute 3-Voyage CoA at Target Cap ≤ $${targetCoACost.toLocaleString()}/day`
-                : `Procure on Prompt Spot Market at ~$${selectedHorizonForecast.pointForecast.toLocaleString()}/day`}
+              {decisionTrigger.triggerActivated || decisionTrigger.action === 'FIX_COA_NOW'
+                ? `Execute 3-Voyage CoA at Target Cap ≤ $${Number(targetCoACost).toLocaleString()}/day`
+                : `Procure on Prompt Spot Market at ~$${Number(selectedHorizonForecast.pointForecast || 22000).toLocaleString()}/day`}
             </h2>
 
             <p className="text-xs text-slate-300 leading-relaxed font-medium">
-              {decisionTrigger.reasoning}
+              {decisionTrigger.reasoning || decisionTrigger.recommendation || 'Optimize forward market entry in accordance with econometric volatility boundaries.'}
             </p>
           </div>
 
           {/* Section 2: Vessel & Landed Cost Breakdown */}
-          {bestSolution && (
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
-                <Ship className="w-4 h-4 text-[#FF3B00]" /> 1. Recommended Vessel Allocation & Financial Analysis
-              </h3>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs font-mono">
-                <div>
-                  <span className="text-slate-500 block">Selected Vessel:</span>
-                  <strong className="text-slate-900 text-sm">{bestSolution.vessel.name}</strong>
-                  <div className="text-[10px] text-slate-400">{bestSolution.vessel.vesselClass} ({bestSolution.vessel.dwt.toLocaleString()} DWT)</div>
-                </div>
-                <div>
-                  <span className="text-slate-500 block">Landed Cost / MT:</span>
-                  <strong className="text-base text-[#FF3B00]">${bestSolution.costBreakdown.costPerTon}/MT</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block">Total Outlay:</span>
-                  <strong className="text-base text-slate-900">${(bestSolution.costBreakdown.totalCost / 1000000).toFixed(2)}M</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block">Est. Turnaround:</span>
-                  <strong className="text-base text-blue-600">{bestSolution.totalTurnaroundDays} Days</strong>
-                </div>
-              </div>
-
-              {/* Table of Cost Components */}
-              <table className="w-full text-xs text-left border-collapse border border-slate-200 rounded-lg overflow-hidden font-mono">
-                <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px]">
-                  <tr>
-                    <th className="py-2 px-3">Cost Component</th>
-                    <th className="py-2 px-3">Basis / Rate</th>
-                    <th className="py-2 px-3 text-right">Subtotal ($)</th>
-                    <th className="py-2 px-3 text-right">% of Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  <tr>
-                    <td className="py-2 px-3 font-sans font-medium">Time Charter Freight</td>
-                    <td className="py-2 px-3">${bestSolution.costBreakdown.dailyRate.toLocaleString()}/day × {bestSolution.totalTurnaroundDays}d</td>
-                    <td className="py-2 px-3 text-right font-bold">${bestSolution.costBreakdown.freightCost.toLocaleString()}</td>
-                    <td className="py-2 px-3 text-right">{Math.round((bestSolution.costBreakdown.freightCost / bestSolution.costBreakdown.totalCost) * 100)}%</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 px-3 font-sans font-medium">Bunker Fuel (VLSFO + Port Aux)</td>
-                    <td className="py-2 px-3">{bestSolution.sailingDays} sea days @ {bestSolution.vessel.bunkerConsumptionTonsPerDay} MT/d ({bestSolution.carbonMetrics.co2EmissionsTons} MT CO₂)</td>
-                    <td className="py-2 px-3 text-right font-bold">${bestSolution.costBreakdown.bunkerCost.toLocaleString()}</td>
-                    <td className="py-2 px-3 text-right">{Math.round((bestSolution.costBreakdown.bunkerCost / bestSolution.costBreakdown.totalCost) * 100)}%</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 px-3 font-sans font-medium">Port Tariffs & Pilotage</td>
-                    <td className="py-2 px-3">Origin ${originPort.portTariffPerTon} + Dest ${activePort.portTariffPerTon}/MT</td>
-                    <td className="py-2 px-3 text-right font-bold">${bestSolution.costBreakdown.portTariffCost.toLocaleString()}</td>
-                    <td className="py-2 px-3 text-right">{Math.round((bestSolution.costBreakdown.portTariffCost / bestSolution.costBreakdown.totalCost) * 100)}%</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 px-3 font-sans font-medium">Anchorage Waiting Demurrage</td>
-                    <td className="py-2 px-3">{activePort.avgWaitingDays} days @ ${activePort.demurrageRatePerDay.toLocaleString()}/d</td>
-                    <td className="py-2 px-3 text-right font-bold text-amber-600">${bestSolution.costBreakdown.demurrageCost.toLocaleString()}</td>
-                    <td className="py-2 px-3 text-right">{Math.round((bestSolution.costBreakdown.demurrageCost / bestSolution.costBreakdown.totalCost) * 100)}%</td>
-                  </tr>
-                  {bestSolution.requiresLightering && (
-                    <tr className="bg-amber-50/50">
-                      <td className="py-2 px-3 font-sans font-medium text-amber-900">Sagar-Sandheads Lightering Surcharge</td>
-                      <td className="py-2 px-3">Barge transshipment for Haldia arrival</td>
-                      <td className="py-2 px-3 text-right font-bold text-amber-900">${bestSolution.costBreakdown.lighteringSurcharge.toLocaleString()}</td>
-                      <td className="py-2 px-3 text-right">{Math.round((bestSolution.costBreakdown.lighteringSurcharge / bestSolution.costBreakdown.totalCost) * 100)}%</td>
-                    </tr>
-                  )}
-                  <tr className="bg-slate-100 font-bold">
-                    <td className="py-2.5 px-3 font-sans font-extrabold" colSpan="2">TOTAL ESTIMATED LANDED PROCUREMENT COST</td>
-                    <td className="py-2.5 px-3 text-right text-sm text-[#FF3B00] font-black">${bestSolution.costBreakdown.totalCost.toLocaleString()}</td>
-                    <td className="py-2.5 px-3 text-right text-sm font-black">100%</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Section 3: Port Infrastructure Validation */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-1 flex items-center gap-1.5">
-              <Anchor className="w-4 h-4 text-[#FF3B00]" /> 2. Dual-Port Infrastructure Compliance
+              <Ship className="w-4 h-4 text-[#FF3B00]" /> 1. Recommended Vessel Allocation & Financial Analysis
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
-                <div className="font-bold text-slate-900">Origin: {originPort.name}</div>
-                <div className="text-slate-600 font-mono">Max Draft: {originPort.maxDraft}m • Max LOA: {originPort.maxLOA}m</div>
-                <div className="text-emerald-700 font-bold">✓ Vessel Compliant ({bestSolution ? bestSolution.vessel.draft : 14}m draft / {bestSolution ? bestSolution.vessel.loa : 225}m LOA)</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs font-mono">
+              <div>
+                <span className="text-slate-500 block">Selected Vessel:</span>
+                <strong className="text-slate-900 text-sm">{vesselName}</strong>
+                <div className="text-[10px] text-slate-400">{vesselClass} ({Number(vesselDwt).toLocaleString()} DWT)</div>
               </div>
-
-              <div className="p-3 rounded-lg border border-slate-200 bg-slate-50 space-y-1">
-                <div className="font-bold text-slate-900">Destination: {activePort.name}</div>
-                <div className="text-slate-600 font-mono">Max Draft: {activePort.maxDraft}m • Max LOA: {activePort.maxLOA}m • Max Beam: {activePort.maxBeam}m</div>
-                <div className="text-emerald-700 font-bold">
-                  {bestSolution && bestSolution.requiresLightering ? '✓ Compliant via Sagar-Sandheads Transshipment' : '✓ Full Direct Berth Compliant'}
-                </div>
+              <div>
+                <span className="text-slate-500 block">Landed Cost / MT:</span>
+                <strong className="text-base text-[#FF3B00]">${Number(costPerTon).toFixed(2)}/MT</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block">Total Outlay:</span>
+                <strong className="text-base text-slate-900">${(Number(totalCost) / 1000000).toFixed(2)}M</strong>
+              </div>
+              <div>
+                <span className="text-slate-500 block">Est. Turnaround:</span>
+                <strong className="text-base text-blue-600">{turnaroundDays} Days</strong>
               </div>
             </div>
+
+            {/* Table of Cost Components */}
+            <table className="w-full text-xs text-left border-collapse border border-slate-200 rounded-lg overflow-hidden font-mono">
+              <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px]">
+                <tr>
+                  <th className="py-2 px-3">Cost Component</th>
+                  <th className="py-2 px-3">Basis / Rate</th>
+                  <th className="py-2 px-3 text-right">Subtotal ($)</th>
+                  <th className="py-2 px-3 text-right">% of Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                <tr>
+                  <td className="py-2 px-3 font-sans font-medium">Time Charter Freight</td>
+                  <td className="py-2 px-3">${Number(dailyRate).toLocaleString()}/day × {turnaroundDays}d</td>
+                  <td className="py-2 px-3 text-right font-bold">${Number(freightCost).toLocaleString()}</td>
+                  <td className="py-2 px-3 text-right">{Math.round((freightCost / Math.max(1, totalCost)) * 100)}%</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-sans font-medium">Bunker Fuel (VLSFO + Port Aux)</td>
+                  <td className="py-2 px-3">{seaDays} sea days @ {fuelBurnPerDay} MT/d ({co2Tons} MT CO₂)</td>
+                  <td className="py-2 px-3 text-right font-bold">${Number(bunkerCost).toLocaleString()}</td>
+                  <td className="py-2 px-3 text-right">{Math.round((bunkerCost / Math.max(1, totalCost)) * 100)}%</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-sans font-medium">Port Tariffs & Pilotage</td>
+                  <td className="py-2 px-3">Origin ${originPort.portTariffPerTon} + Dest ${activePort.portTariffPerTon}/MT</td>
+                  <td className="py-2 px-3 text-right font-bold">${Number(portTariffCost).toLocaleString()}</td>
+                  <td className="py-2 px-3 text-right">{Math.round((portTariffCost / Math.max(1, totalCost)) * 100)}%</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3 font-sans font-medium">Anchorage Waiting Demurrage</td>
+                  <td className="py-2 px-3">{activePort.avgWaitingDays} days @ ${Number(activePort.demurrageRatePerDay).toLocaleString()}/d</td>
+                  <td className="py-2 px-3 text-right font-bold text-amber-600">${Number(demurrageCost).toLocaleString()}</td>
+                  <td className="py-2 px-3 text-right">{Math.round((demurrageCost / Math.max(1, totalCost)) * 100)}%</td>
+                </tr>
+                {lighteringCost > 0 && (
+                  <tr className="bg-amber-50/50">
+                    <td className="py-2 px-3 font-sans font-medium text-amber-900">Sagar-Sandheads Lightering Surcharge</td>
+                    <td className="py-2 px-3">Barge transshipment for Haldia arrival</td>
+                    <td className="py-2 px-3 text-right font-bold text-amber-900">${Number(lighteringCost).toLocaleString()}</td>
+                    <td className="py-2 px-3 text-right">{Math.round((lighteringCost / Math.max(1, totalCost)) * 100)}%</td>
+                  </tr>
+                )}
+                <tr className="bg-slate-100 font-bold">
+                  <td className="py-2.5 px-3 font-sans font-extrabold" colSpan="2">TOTAL ESTIMATED LANDED PROCUREMENT COST</td>
+                  <td className="py-2.5 px-3 text-right text-sm text-[#FF3B00] font-black">${Number(totalCost).toLocaleString()}</td>
+                  <td className="py-2.5 px-3 text-right text-sm font-black">100%</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
-          {/* Signoff Footer */}
-          <div className="pt-6 border-t-2 border-slate-200 flex justify-between items-end text-xs text-slate-500 font-mono">
+          {/* Section 3: Port Operations & Approvals */}
+          <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500">
             <div>
-              <div>Generated by OceanPulse Prescriptive Optimizer</div>
-              <div>Algorithmic verification: GARCH(1,1) • CatBoost • Denton-Cholette • PuLP Solver • IMO CII Verified</div>
+              <span>Model Version: <strong>OceanPulse Tier-2 Ensemble (GARCH + LightGBM + PuLP)</strong></span>
             </div>
-            <div className="text-right border-t border-slate-400 pt-1 min-w-[180px]">
-              <span className="font-sans font-bold text-slate-700">Procurement Officer Approval</span>
+            <div className="flex items-center gap-6 mt-2 sm:mt-0">
+              <span>Prepared by: Logistics Optimization Desk</span>
+              <span>Approved by: Chief Procurement Officer</span>
             </div>
           </div>
 

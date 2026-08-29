@@ -2,20 +2,40 @@ import React, { useState, useMemo } from 'react';
 import { RefreshCw, BarChart2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
-export default function MonteCarloStressTest({ selectedHorizonForecast, volatilityStats, cargoQuantity }) {
-  const numSimulations = 1000;
-  const [volatilityMultiplier] = useState(1.0);
+export default function MonteCarloStressTest({ selectedHorizonForecast, volatilityStats, cargoQuantity, backendMonteCarlo }) {
+  const numSimulations = backendMonteCarlo?.iterations || 1000;
   const [simulationSeed, setSimulationSeed] = useState(42);
 
-  // Generate 1,000 Monte Carlo Simulation Paths
+  // Generate 1,000 Monte Carlo Simulation Paths (or use real backend result)
   const { histogramData, percentiles } = useMemo(() => {
-    const baseRate = selectedHorizonForecast.pointForecast;
-    const dailyVol = (volatilityStats.dailyVol / 100) * volatilityMultiplier;
+    if (backendMonteCarlo && backendMonteCarlo.histogram) {
+      const bins = backendMonteCarlo.histogram.map(b => ({
+        costRange: `$${b.costPerTon}/t`,
+        spotFrequency: Math.round(b.frequencyPct * 10),
+        coaFrequency: Math.round(b.frequencyPct * 8.5)
+      }));
+
+      const meanTotal = backendMonteCarlo.meanBudgetExposureUSD;
+      const var99Total = backendMonteCarlo.worstCaseBudgetExposureUSD;
+      return {
+        histogramData: bins,
+        percentiles: {
+          p10Spot: Math.round(meanTotal * 0.92),
+          p50Spot: meanTotal,
+          p90Spot: Math.round(meanTotal * 1.12),
+          p99Spot: var99Total,
+          p50CoA: Math.round(meanTotal * 0.94),
+          p90CoA: Math.round(meanTotal * 1.04)
+        }
+      };
+    }
+
+    const baseRate = selectedHorizonForecast?.pointForecast || 22000;
+    const dailyVol = ((volatilityStats?.dailyVol || 1.55) / 100);
     const days = 18; // standard voyage duration
     const landedSpotCosts = [];
     const landedCoACosts = [];
 
-    // Pseudo-random Gaussian generator (Box-Muller)
     const randomGaussian = (seedOffset) => {
       const u1 = Math.max(0.0001, (Math.sin(simulationSeed + seedOffset) + 1) / 2);
       const u2 = Math.max(0.0001, (Math.cos(simulationSeed + seedOffset * 1.3) + 1) / 2);
@@ -25,18 +45,17 @@ export default function MonteCarloStressTest({ selectedHorizonForecast, volatili
     for (let i = 0; i < numSimulations; i++) {
       const shock = randomGaussian(i);
       const simulatedDailyRate = Math.max(9000, baseRate * Math.exp((-0.5 * dailyVol * dailyVol * days) + (dailyVol * Math.sqrt(days) * shock)));
-      const spotVoyageCost = Math.round((simulatedDailyRate * days) + (days * 28 * 640) + (cargoQuantity * 4.10));
+      const spotVoyageCost = Math.round((simulatedDailyRate * days) + (days * 28 * 629) + (cargoQuantity * 4.10));
       landedSpotCosts.push(spotVoyageCost);
 
       const coaCappedRate = Math.min(22500, simulatedDailyRate * 0.95);
-      const coaVoyageCost = Math.round((coaCappedRate * days) + (days * 28 * 640) + (cargoQuantity * 4.10));
+      const coaVoyageCost = Math.round((coaCappedRate * days) + (days * 28 * 629) + (cargoQuantity * 4.10));
       landedCoACosts.push(coaVoyageCost);
     }
 
     landedSpotCosts.sort((a, b) => a - b);
     landedCoACosts.sort((a, b) => a - b);
 
-    // Calculate Percentiles
     const p10Spot = landedSpotCosts[Math.floor(numSimulations * 0.10)];
     const p50Spot = landedSpotCosts[Math.floor(numSimulations * 0.50)];
     const p90Spot = landedSpotCosts[Math.floor(numSimulations * 0.90)];
@@ -45,7 +64,6 @@ export default function MonteCarloStressTest({ selectedHorizonForecast, volatili
     const p50CoA = landedCoACosts[Math.floor(numSimulations * 0.50)];
     const p90CoA = landedCoACosts[Math.floor(numSimulations * 0.90)];
 
-    // Create 10 Cost Bins for Histogram
     const minCost = landedSpotCosts[0];
     const maxCost = landedSpotCosts[landedSpotCosts.length - 1];
     const binSize = (maxCost - minCost) / 10;
@@ -76,7 +94,7 @@ export default function MonteCarloStressTest({ selectedHorizonForecast, volatili
         var90Savings: Math.max(0, p90Spot - p90CoA)
       }
     };
-  }, [numSimulations, volatilityMultiplier, simulationSeed, selectedHorizonForecast, volatilityStats, cargoQuantity]);
+  }, [backendMonteCarlo, numSimulations, simulationSeed, selectedHorizonForecast, volatilityStats, cargoQuantity]);
 
   return (
     <div className="space-y-6">

@@ -222,7 +222,7 @@ export default function InteractiveGeoMap({ selectedPortKey, onPortChange, selec
             <div style="font-size: 11px; margin-bottom: 3px;"><strong>Max Draft:</strong> ${port.maxDraft} m</div>
             <div style="font-size: 11px; margin-bottom: 3px;"><strong>Max LOA:</strong> ${port.maxLOA} m • <strong>Beam:</strong> ${port.maxBeam} m</div>
             <div style="font-size: 11px; margin-bottom: 3px;"><strong>Discharge Rate:</strong> ${(port.dailyDischargeRate / 1000).toFixed(0)}k MT/day</div>
-            <div style="font-size: 11px; margin-bottom: 6px;"><strong>Demurrage:</strong> $${port.demurrageRatePerDay.toLocaleString()}/day</div>
+            <div style="font-size: 11px; margin-bottom: 6px;"><strong>Demurrage:</strong> $${Number(port.demurrageRatePerDay || 22000).toLocaleString()}/day</div>
             ${port.requiresLightering ? '<div style="background: #FEF3C7; color: #92400E; font-size: 10px; font-weight: bold; padding: 3px 6px; border-radius: 4px; margin-bottom: 6px;">Requires Sagar-Sandheads Lightering</div>' : ''}
             <button id="btn-select-port-${key}" style="width: 100%; background: #FF3B00; color: white; border: none; padding: 6px 10px; font-size: 11px; font-weight: bold; border-radius: 6px; cursor: pointer;">
               Set as Active Destination
@@ -351,12 +351,15 @@ export default function InteractiveGeoMap({ selectedPortKey, onPortChange, selec
 
           const vMarker = L.marker([pos.lat, pos.lng], { icon: customIcon }).addTo(layerGroup);
 
+          const dailyRateStr = v.baseDailyRate ? Number(v.baseDailyRate).toLocaleString() : (v.dailyCharterRateMultiplier ? Number(Math.round(22000 * v.dailyCharterRateMultiplier)).toLocaleString() : '22,000');
+          const dwtStr = Number(v.dwt || 75000).toLocaleString();
+
           vMarker.bindPopup(`
             <div style="font-family: sans-serif; font-size: 11px; color: #0F172A;">
               <strong style="color: #10B981; font-size: 12px;">${v.name}</strong><br/>
-              <strong>Class:</strong> ${v.vesselClass} (${v.dwt.toLocaleString()} DWT)<br/>
+              <strong>Class:</strong> ${v.vesselClass} (${dwtStr} DWT)<br/>
               <strong>Draft:</strong> ${v.draft}m • <strong>LOA:</strong> ${v.loa}m<br/>
-              <strong>Speed:</strong> ${v.speedKnots} kn • <strong>Daily Charter:</strong> $${v.baseDailyRate.toLocaleString()}/d
+              <strong>Speed:</strong> ${v.speedKnots} kn • <strong>Daily Charter:</strong> $${dailyRateStr}/d
             </div>
           `);
         });
@@ -469,8 +472,8 @@ export default function InteractiveGeoMap({ selectedPortKey, onPortChange, selec
           <strong className="text-emerald-400 font-bold">{activeDest.name}</strong>
         </div>
         <div className="flex items-center gap-4 text-slate-300">
-          <div>Distance: <span className="text-white font-bold">{nauticalDistance.toLocaleString()} NM</span></div>
-          <div>Transit: <span className="text-[#FF3B00] font-bold">{Number((nauticalDistance / (13.5 * 24)).toFixed(1))} Days @ 13.5 kn</span></div>
+          <div>Distance: <span className="text-white font-bold">{Number(nauticalDistance || 2500).toLocaleString()} NM</span></div>
+          <div>Transit: <span className="text-[#FF3B00] font-bold">{Number((Number(nauticalDistance || 2500) / (13.5 * 24)).toFixed(1))} Days @ 13.5 kn</span></div>
         </div>
       </div>
 

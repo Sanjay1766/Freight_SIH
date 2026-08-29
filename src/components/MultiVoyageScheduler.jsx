@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, CheckCircle2, Sparkles } from 'lucide-react';
 import { EAST_COAST_PORT_MATRIX, ORIGIN_PORTS_MATRIX } from '../services/optimizerEngine';
 
-export default function MultiVoyageScheduler({ forecastData }) {
+export default function MultiVoyageScheduler({ forecastData, backendSchedule }) {
   // Default 5-Voyage Procurement Plan
   const [voyages] = useState([
     { id: 1, origin: 'Indonesia_Samarinda', dest: 'Dhamra', volume: 75000, targetDay: 12, vesselClass: 'Panamax', commodity: 'Thermal Coal', status: 'OPTIMIZED' },
@@ -15,17 +15,23 @@ export default function MultiVoyageScheduler({ forecastData }) {
   const totalVolume = voyages.reduce((acc, v) => acc + v.volume, 0);
   
   // Financial Comparison: Spot vs Master Program CoA
-  const totalSpotProgramCost = Math.round(voyages.reduce((acc, v) => {
-    const fCast = forecastData.find(f => f.horizon === v.targetDay) || forecastData[0];
-    const days = 18;
-    const freight = fCast.pointForecast * days;
-    const bunker = days * 30 * 640;
-    const tariffs = v.volume * 4.20;
-    return acc + freight + bunker + tariffs;
-  }, 0));
+  const totalSpotProgramCost = backendSchedule?.totalBudgetSpotUSD 
+    ? backendSchedule.totalBudgetSpotUSD 
+    : Math.round(voyages.reduce((acc, v) => {
+        const fCast = (forecastData && forecastData.find(f => f.horizon === v.targetDay)) || (forecastData && forecastData[0]) || { pointForecast: 22000 };
+        const days = 18;
+        const freight = fCast.pointForecast * days;
+        const bunker = days * 30 * 629;
+        const tariffs = v.volume * 4.20;
+        return acc + freight + bunker + tariffs;
+      }, 0));
 
-  const totalCoAProgramCost = Math.round(totalSpotProgramCost * 0.905);
-  const programSavings = totalSpotProgramCost - totalCoAProgramCost;
+  const totalCoAProgramCost = backendSchedule?.totalBudgetOptimizedUSD 
+    ? backendSchedule.totalBudgetOptimizedUSD 
+    : Math.round(totalSpotProgramCost * 0.905);
+  const programSavings = backendSchedule?.netPortfolioSavingsUSD 
+    ? backendSchedule.netPortfolioSavingsUSD 
+    : (totalSpotProgramCost - totalCoAProgramCost);
   const programSavingsPerTon = Number((programSavings / totalVolume).toFixed(2));
 
   return (
@@ -51,7 +57,7 @@ export default function MultiVoyageScheduler({ forecastData }) {
 
           <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-right min-w-[220px]">
             <div className="text-[10px] uppercase font-bold text-slate-400">Total Program Volume</div>
-            <div className="text-2xl font-mono font-extrabold text-white">{totalVolume.toLocaleString()} MT</div>
+            <div className="text-2xl font-mono font-extrabold text-white">{Number(totalVolume || 0).toLocaleString()} MT</div>
             <div className="text-[11px] text-emerald-400 font-semibold mt-0.5">
               Program Savings: ${(programSavings / 1000000).toFixed(2)}M
             </div>
@@ -147,7 +153,7 @@ export default function MultiVoyageScheduler({ forecastData }) {
                     </td>
 
                     <td className="py-3 px-3 font-bold text-slate-900">
-                      {v.volume.toLocaleString()} MT
+                      {Number(v?.volume || 75000).toLocaleString()} MT
                       <div className="text-[10px] text-slate-500 font-normal">{v.commodity}</div>
                     </td>
 

@@ -63,7 +63,7 @@ export default function MTIChart({ historySeries }) {
               contentStyle={{ backgroundColor: '#0F172A', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
               formatter={(val, name) => {
                 if (name === 'mtiIndia') return [val, 'MTI_India Index'];
-                if (name === 'seaborneVolumeDaily') return [`${val.toLocaleString()} kMT/day`, 'Disaggregated Import Volume'];
+                if (name === 'seaborneVolumeDaily') return [`${Number(val || 0).toLocaleString()} kMT/day`, 'Disaggregated Import Volume'];
                 return [val, name];
               }}
             />

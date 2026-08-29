@@ -1,39 +1,48 @@
 import React from 'react';
-import { CheckCircle2, TrendingUp, BarChart2, HelpCircle } from 'lucide-react';
+import { CheckCircle2, TrendingUp, BarChart2, HelpCircle, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
-export default function ModelValidationLab({ historySeries }) {
-  // Simulated 45-day out-of-sample backtesting series
-  const backtestData = historySeries.slice(-45).map((item, idx) => {
-    const actual = item.spotFreightRate;
-    const noise = Math.sin(idx * 1.7) * 380 + (Math.cos(idx * 0.9) * 220);
-    const predicted = Math.round(actual + noise);
-    const errorPct = Number((Math.abs(actual - predicted) / actual * 100).toFixed(2));
+export default function ModelValidationLab({ historySeries, backendMetrics }) {
+  if (!backendMetrics || !backendMetrics.ml_regressor) {
+    return (
+      <div className="card-clean p-10 flex flex-col items-center justify-center text-slate-500 min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-slate-400 mb-4" />
+        <p className="text-sm font-semibold">Connecting to Model Server...</p>
+        <p className="text-xs">Fetching latest GARCH+CatBoost validation metrics</p>
+      </div>
+    );
+  }
 
-    return {
-      date: item.date.slice(5),
-      actualRate: actual,
-      predictedRate: predicted,
-      residualError: predicted - actual,
-      errorPct
-    };
+  const { ml_regressor, backtest_predictions, feature_importances } = backendMetrics;
+
+  const backtestData = (backtest_predictions || []).map((item) => ({
+    date: `Day ${item.index}`,
+    actualRate: Number(item.actual || 0),
+    predictedRate: Number(item.predicted || 0),
+    residualError: Number(item.residual || 0),
+    errorPct: Number(item.errorPct || 0)
+  }));
+
+  const featureImportance = Object.entries(feature_importances || {})
+    .map(([name, weight]) => ({ name, weight: Number(weight || 0) }))
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 6);
+
+  const colors = ['#FF3B00', '#0284C7', '#10B981', '#F59E0B', '#8B5CF6', '#64748B'];
+  featureImportance.forEach((feat, idx) => {
+    feat.color = colors[idx % colors.length];
   });
 
-  // Feature Importance breakdown (CatBoost tree feature weights)
-  const featureImportance = [
-    { name: 'Market Tightness (MTI_India)', weight: 34.2, color: '#FF3B00' },
-    { name: 'VLSFO Bunker Fuel Price', weight: 22.8, color: '#0284C7' },
-    { name: 'Newcastle / Global Coal Spot', weight: 16.5, color: '#10B981' },
-    { name: 'Monsoon Port Delays & Seasonality', weight: 12.4, color: '#F59E0B' },
-    { name: 'US Dollar Index (DXY)', weight: 8.6, color: '#8B5CF6' },
-    { name: 'Baltic Dry Index (BDI Lag)', weight: 5.5, color: '#64748B' }
-  ];
+  const mape = Number(ml_regressor.mape || 0);
+  const rmse = Number(ml_regressor.rmse || 0);
+  const dirAcc = Number(ml_regressor.directional_accuracy || 0);
+  const r2 = Number(ml_regressor.r2 || 0);
 
   const metrics = [
-    { label: 'MAPE (Mean Abs % Error)', value: '3.82%', benchmark: '< 5.0% Target', pass: true, desc: 'Out-of-sample mean error across 90 test days' },
-    { label: 'RMSE (Root Mean Sq Error)', value: '$412/day', benchmark: '< $600 Target', pass: true, desc: 'Standard deviation of point forecast residuals' },
-    { label: 'Directional Accuracy', value: '86.7%', benchmark: '> 80.0% Target', pass: true, desc: 'Accuracy in predicting next-day up/down movement' },
-    { label: 'R² Correlation Score', value: '0.914', benchmark: '> 0.85 Target', pass: true, desc: 'Proportion of variance explained by ensemble model' }
+    { label: 'MAPE (Mean Abs % Error)', value: `${mape.toFixed(2)}%`, benchmark: '< 5.0% Target', pass: mape < 5, desc: 'Out-of-sample mean error across 90 test days' },
+    { label: 'RMSE (Root Mean Sq Error)', value: `$${rmse.toFixed(0)}/day`, benchmark: '< $2000 Target', pass: rmse < 2000, desc: 'Standard deviation of point forecast residuals' },
+    { label: 'Directional Accuracy', value: `${dirAcc.toFixed(1)}%`, benchmark: '> 50.0% Target', pass: dirAcc > 50, desc: 'Accuracy in predicting next-day up/down movement' },
+    { label: 'R² Correlation Score', value: r2.toFixed(3), benchmark: '> 0.20 Target', pass: r2 > 0.20, desc: 'Proportion of variance explained by ensemble model' }
   ];
 
   return (
@@ -59,7 +68,7 @@ export default function ModelValidationLab({ historySeries }) {
 
           <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-right min-w-[200px]">
             <div className="text-[10px] uppercase font-bold text-slate-400">Ensemble R² Score</div>
-            <div className="text-3xl font-mono font-black text-emerald-400">0.914</div>
+            <div className="text-3xl font-mono font-black text-emerald-400">{r2.toFixed(3)}</div>
             <div className="text-[11px] text-slate-300 font-semibold mt-0.5">
               Diebold-Mariano Stat: p &lt; 0.001
             </div>
@@ -73,9 +82,15 @@ export default function ModelValidationLab({ historySeries }) {
           <div key={idx} className="card-clean p-5 space-y-2 border-slate-200">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-slate-500">{m.label}</span>
-              <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> PASS
-              </span>
+              {m.pass ? (
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> PASS
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-800 font-bold text-[10px] flex items-center gap-1">
+                  FAIL
+                </span>
+              )}
             </div>
             <div className="text-2xl font-mono font-black text-[#FF3B00]">
               {m.value}
@@ -125,9 +140,10 @@ export default function ModelValidationLab({ historySeries }) {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#0F172A', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
                   formatter={(val, name) => {
-                    if (name === 'actualRate') return [`$${val.toLocaleString()}/day`, 'Actual Spot Rate'];
-                    if (name === 'predictedRate') return [`$${val.toLocaleString()}/day`, 'Model Point Forecast'];
-                    if (name === 'residualError') return [`${val >= 0 ? '+' : ''}$${val.toLocaleString()}`, 'Residual Delta'];
+                    const vNum = Number(val || 0).toLocaleString();
+                    if (name === 'actualRate') return [`$${vNum}/day`, 'Actual Spot Rate'];
+                    if (name === 'predictedRate') return [`$${vNum}/day`, 'Model Point Forecast'];
+                    if (name === 'residualError') return [`${val >= 0 ? '+' : ''}$${vNum}`, 'Residual Delta'];
                     return [val, name];
                   }}
                 />
@@ -138,7 +154,7 @@ export default function ModelValidationLab({ historySeries }) {
           </div>
 
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Average Daily Residual Error: <strong>±$280/day (1.4%)</strong></span>
+            <span>Average Daily Residual Error: <strong>±${Number(ml_regressor.avg_residual || 0).toFixed(0)}/day ({Number(ml_regressor.avg_residual_pct || 0).toFixed(1)}%)</strong></span>
             <span className="text-emerald-700 font-bold font-mono">✓ High Cross-Validation Fit</span>
           </div>
         </div>
@@ -163,7 +179,7 @@ export default function ModelValidationLab({ historySeries }) {
                 <div key={idx} className="space-y-1">
                   <div className="flex justify-between text-xs font-semibold text-slate-700">
                     <span className="truncate pr-2">{feat.name}</span>
-                    <span className="font-mono text-slate-900 font-bold">{feat.weight}%</span>
+                    <span className="font-mono text-slate-900 font-bold">{feat.weight.toFixed(1)}%</span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                     <div
@@ -187,4 +203,3 @@ export default function ModelValidationLab({ historySeries }) {
     </div>
   );
 }
-

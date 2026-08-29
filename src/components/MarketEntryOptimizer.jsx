@@ -1,28 +1,90 @@
-import React from 'react';
-import { Calendar, TrendingDown, DollarSign } from 'lucide-react';
+import React, { useMemo } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Calendar, TrendingDown, DollarSign } from 'lucide-react';
 
 export default function MarketEntryOptimizer({
-  forecastData,
-  entryWindows,
-  decisionTrigger,
+  forecastData = [],
+  entryWindows = [],
+  decisionTrigger = {},
   contractComparison,
-  selectedHorizon,
+  selectedHorizon = 15,
   onSelectHorizon,
-  targetCoACost
+  targetCoACost = 21500
 }) {
-  const chartData = forecastData.map(item => ({
+  const chartData = (forecastData || []).map(item => ({
     horizon: item.horizon,
     dayLabel: `D+${item.horizon}`,
-    date: item.date.slice(5),
-    pointForecast: item.pointForecast,
-    lower95: item.lower95,
-    upper95: item.upper95,
-    entryScore: item.entryScore,
-    entryRating: item.entryRating
+    date: item.date ? item.date.slice(5) : `+${item.horizon}d`,
+    pointForecast: item.pointForecast || 22000,
+    lower95: item.lower95 || 20000,
+    upper95: item.upper95 || 24000,
+    entryScore: item.entryScore || 3,
+    entryRating: item.entryRating || 'NEUTRAL'
   }));
 
-  const currentRate = forecastData[0] ? forecastData[0].pointForecast : 20000;
+  const currentRate = forecastData && forecastData[0] ? (forecastData[0].pointForecast || 22000) : 22000;
+
+  const comparison = useMemo(() => {
+    if (contractComparison && !Array.isArray(contractComparison) && contractComparison.spot) {
+      return contractComparison;
+    }
+
+    if (Array.isArray(contractComparison) && contractComparison.length >= 3) {
+      return {
+        spot: {
+          label: contractComparison[0].structure || 'Single Spot Fixture',
+          costPerTon: contractComparison[0].ratePerTon || 15.3,
+          ratePerDay: currentRate,
+          totalCostDollars: contractComparison[0].voyageTotal || 1150000,
+          volatilityExposure: 'HIGH (100% Spot)',
+          recommendationTag: contractComparison[0].recommended ? 'RECOMMENDED' : 'MONITOR'
+        },
+        coaShortTerm3V: {
+          label: contractComparison[1].structure || 'Short-Term 3-Voyage CoA',
+          costPerTon: contractComparison[1].ratePerTon || 14.5,
+          ratePerDay: Math.round(currentRate * 0.945),
+          totalCostDollars: contractComparison[1].voyageTotal || 3260000,
+          savingsVsSpot: contractComparison[1].totalSavings || 180000,
+          recommendationTag: contractComparison[1].recommended ? 'RECOMMENDED' : 'EVALUATE'
+        },
+        coaMidTerm6M: {
+          label: contractComparison[2].structure || 'Medium-Term 6-12M Term CoA',
+          costPerTon: contractComparison[2].ratePerTon || 14.0,
+          ratePerDay: Math.round(currentRate * 0.915),
+          totalCostDollars: contractComparison[2].voyageTotal || 8400000,
+          demurrageRiskScore: 'Zero Demurrage Clause',
+          recommendationTag: contractComparison[2].recommended ? 'HIGH_PRIORITY' : 'EVALUATE'
+        }
+      };
+    }
+
+    return {
+      spot: {
+        label: 'Single Spot Fixture (1-Voyage Prompt)',
+        costPerTon: 15.3,
+        ratePerDay: currentRate,
+        totalCostDollars: 1150000,
+        volatilityExposure: 'HIGH (100% Spot)',
+        recommendationTag: 'MONITOR'
+      },
+      coaShortTerm3V: {
+        label: 'Short-Term CoA (3 Consecutive Voyages)',
+        costPerTon: 14.5,
+        ratePerDay: Math.round(currentRate * 0.945),
+        totalCostDollars: 3260000,
+        savingsVsSpot: 180000,
+        recommendationTag: 'RECOMMENDED'
+      },
+      coaMidTerm6M: {
+        label: 'Medium-Term Term CoA (6-12 Months)',
+        costPerTon: 14.0,
+        ratePerDay: Math.round(currentRate * 0.915),
+        totalCostDollars: 8400000,
+        demurrageRiskScore: 'Zero Demurrage Clause',
+        recommendationTag: 'TERM HEDGE'
+      }
+    };
+  }, [contractComparison, currentRate]);
 
   return (
     <div className="space-y-6">
@@ -47,9 +109,9 @@ export default function MarketEntryOptimizer({
 
           <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700 text-right min-w-[200px]">
             <div className="text-[10px] uppercase font-bold text-slate-400">Current Spot Rate Benchmark</div>
-            <div className="text-2xl font-mono font-extrabold text-[#FF3B00]">${currentRate.toLocaleString()}/day</div>
+            <div className="text-2xl font-mono font-extrabold text-[#FF3B00]">${Number(currentRate).toLocaleString()}/day</div>
             <div className="text-[11px] text-emerald-400 font-semibold mt-0.5">
-              {decisionTrigger.triggerActivated ? '▲ High Volatility Regime' : '● Stable Spot Regime'}
+              {decisionTrigger.triggerActivated || decisionTrigger.action === 'FIX_COA_NOW' ? '▲ High Volatility Regime' : '● Stable Spot Regime'}
             </div>
           </div>
         </div>
@@ -57,7 +119,7 @@ export default function MarketEntryOptimizer({
 
       {/* 3 Optimal Entry Windows Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {entryWindows.map((win, idx) => {
+        {(entryWindows || []).map((win, idx) => {
           const isOptimal = win.rating === 'OPTIMAL_ENTRY_WINDOW' || win.rating === 'GOOD_ENTRY';
 
           return (
@@ -72,7 +134,7 @@ export default function MarketEntryOptimizer({
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-[#FF3B00]" />
-                  {win.windowLabel}
+                  {win.windowLabel || `Window #${idx + 1}`}
                 </span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                   isOptimal ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-700'
@@ -82,9 +144,9 @@ export default function MarketEntryOptimizer({
               </div>
 
               <div className="mb-2">
-                <div className="text-xs font-bold text-slate-900">{win.contractType}</div>
+                <div className="text-xs font-bold text-slate-900">{win.contractType || 'CoA Contract'}</div>
                 <div className="text-2xl font-black font-mono text-[#FF3B00] mt-1">
-                  ${win.expectedRate.toLocaleString()}
+                  ${Number(win.expectedRate || 22000).toLocaleString()}
                   <span className="text-xs font-medium text-slate-400 font-sans"> /day</span>
                 </div>
               </div>
@@ -92,34 +154,34 @@ export default function MarketEntryOptimizer({
               <div className="text-[11px] font-mono text-slate-600 space-y-1 mb-3 pt-2 border-t border-slate-100">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Target Fix Day:</span>
-                  <strong className="text-slate-900">Day {win.optimalDay} ({win.targetDate})</strong>
+                  <strong className="text-slate-900">Day {win.optimalDay || (idx * 15 + 5)} ({win.targetDate || 'Prompt'})</strong>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">95% Range:</span>
-                  <span>${win.lower95.toLocaleString()} - ${win.upper95.toLocaleString()}</span>
+                  <span>${Number(win.lower95 || 20000).toLocaleString()} - ${Number(win.upper95 || 24000).toLocaleString()}</span>
                 </div>
               </div>
 
               <div className="text-xs text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 leading-relaxed font-medium">
-                {win.actionAdvice}
+                {win.actionAdvice || 'Monitor forward curve; lock fixtures in volatility troughs.'}
               </div>
 
               <button
-                onClick={() => onSelectHorizon(win.optimalDay)}
+                onClick={() => onSelectHorizon && onSelectHorizon(win.optimalDay || 15)}
                 className={`w-full mt-3 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                   selectedHorizon === win.optimalDay
                     ? 'bg-[#FF3B00] text-white shadow-sm'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
-                {selectedHorizon === win.optimalDay ? '✓ Active Forecast Target' : `Simulate Day ${win.optimalDay} Fixture`}
+                {selectedHorizon === win.optimalDay ? '✓ Active Forecast Target' : `Simulate Day ${win.optimalDay || 15} Fixture`}
               </button>
             </div>
           );
         })}
       </div>
 
-      {/* 90-Day Forward Rate Curve Chart with Entry Windows Heatmap */}
+      {/* 90-Day Forward Rate Curve Chart */}
       <div className="card-clean p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
@@ -132,7 +194,7 @@ export default function MarketEntryOptimizer({
               </h3>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Evaluates rate curves across 1 to 90 days with target budget ceiling (${targetCoACost.toLocaleString()}/day)
+              Evaluates rate curves across 1 to 90 days with target budget ceiling (${Number(targetCoACost).toLocaleString()}/day)
             </p>
           </div>
 
@@ -151,9 +213,9 @@ export default function MarketEntryOptimizer({
               <Tooltip
                 contentStyle={{ backgroundColor: '#0F172A', borderColor: '#334155', borderRadius: '12px', color: '#fff', fontSize: '12px' }}
                 formatter={(val, name) => {
-                  if (name === 'pointForecast') return [`$${val.toLocaleString()}/day`, 'Point Rate Forecast'];
-                  if (name === 'lower95') return [`$${val.toLocaleString()}/day`, 'Lower 95% Bound'];
-                  if (name === 'upper95') return [`$${val.toLocaleString()}/day`, 'Upper 95% Bound'];
+                  if (name === 'pointForecast') return [`$${Number(val || 0).toLocaleString()}/day`, 'Point Rate Forecast'];
+                  if (name === 'lower95') return [`$${Number(val || 0).toLocaleString()}/day`, 'Lower 95% Bound'];
+                  if (name === 'upper95') return [`$${Number(val || 0).toLocaleString()}/day`, 'Upper 95% Bound'];
                   return [val, name];
                 }}
               />
@@ -195,29 +257,29 @@ export default function MarketEntryOptimizer({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Option 1: Spot */}
           <div className={`p-4 rounded-xl border ${
-            contractComparison.spot.recommendationTag === 'RECOMMENDED'
+            comparison.spot.recommendationTag === 'RECOMMENDED'
               ? 'border-emerald-500 bg-emerald-50/40 shadow-sm'
               : 'border-slate-200 bg-slate-50'
           }`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-slate-900 text-sm">{contractComparison.spot.label}</span>
+              <span className="font-bold text-slate-900 text-sm">{comparison.spot.label}</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-200 text-slate-800">1 VOYAGE</span>
             </div>
             <div className="text-2xl font-mono font-black text-slate-900 my-2">
-              ${contractComparison.spot.costPerTon}/MT
+              ${comparison.spot.costPerTon}/MT
             </div>
             <div className="space-y-1 text-xs font-mono text-slate-600 mb-3">
               <div className="flex justify-between">
                 <span>Daily Charter:</span>
-                <strong>${contractComparison.spot.ratePerDay.toLocaleString()}/d</strong>
+                <strong>${Number(comparison.spot.ratePerDay || currentRate).toLocaleString()}/d</strong>
               </div>
               <div className="flex justify-between">
                 <span>Total Outlay:</span>
-                <strong>${(contractComparison.spot.totalCostDollars / 1000000).toFixed(2)}M</strong>
+                <strong>${(Number(comparison.spot.totalCostDollars || 1150000) / 1000000).toFixed(2)}M</strong>
               </div>
               <div className="flex justify-between">
                 <span>Volatility Risk:</span>
-                <span className="text-rose-600 font-bold">{contractComparison.spot.volatilityExposure}</span>
+                <span className="text-rose-600 font-bold">{comparison.spot.volatilityExposure || 'HIGH'}</span>
               </div>
             </div>
             <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200 leading-snug">
@@ -227,29 +289,29 @@ export default function MarketEntryOptimizer({
 
           {/* Option 2: 3-Voyage CoA */}
           <div className={`p-4 rounded-xl border ${
-            contractComparison.coaShortTerm3V.recommendationTag === 'RECOMMENDED'
+            comparison.coaShortTerm3V.recommendationTag === 'RECOMMENDED'
               ? 'border-orange-500 bg-orange-500/5 ring-2 ring-orange-500/30 shadow-md'
               : 'border-slate-200 bg-slate-50'
           }`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-slate-900 text-sm">{contractComparison.coaShortTerm3V.label}</span>
+              <span className="font-bold text-slate-900 text-sm">{comparison.coaShortTerm3V.label}</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-[#FF3B00] text-white">RECOMMENDED</span>
             </div>
             <div className="text-2xl font-mono font-black text-[#FF3B00] my-2">
-              ${contractComparison.coaShortTerm3V.costPerTon}/MT
+              ${comparison.coaShortTerm3V.costPerTon}/MT
             </div>
             <div className="space-y-1 text-xs font-mono text-slate-600 mb-3">
               <div className="flex justify-between">
                 <span>Daily Rate:</span>
-                <strong>${contractComparison.coaShortTerm3V.ratePerDay.toLocaleString()}/d</strong>
+                <strong>${Number(comparison.coaShortTerm3V.ratePerDay || Math.round(currentRate * 0.945)).toLocaleString()}/d</strong>
               </div>
               <div className="flex justify-between">
                 <span>Total Outlay:</span>
-                <strong>${(contractComparison.coaShortTerm3V.totalCostDollars / 1000000).toFixed(2)}M</strong>
+                <strong>${(Number(comparison.coaShortTerm3V.totalCostDollars || 3260000) / 1000000).toFixed(2)}M</strong>
               </div>
               <div className="flex justify-between">
                 <span>Hedge Savings:</span>
-                <strong className="text-emerald-600 font-bold">~${(contractComparison.coaShortTerm3V.savingsVsSpot || 120000).toLocaleString()}</strong>
+                <strong className="text-emerald-600 font-bold">~${Number(comparison.coaShortTerm3V.savingsVsSpot || 180000).toLocaleString()}</strong>
               </div>
             </div>
             <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200 leading-snug">
@@ -259,29 +321,29 @@ export default function MarketEntryOptimizer({
 
           {/* Option 3: 6-Month Term CoA */}
           <div className={`p-4 rounded-xl border ${
-            contractComparison.coaMidTerm6M.recommendationTag === 'HIGH_PRIORITY'
+            comparison.coaMidTerm6M.recommendationTag === 'HIGH_PRIORITY'
               ? 'border-blue-500 bg-blue-50/40 shadow-md'
               : 'border-slate-200 bg-slate-50'
           }`}>
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-slate-900 text-sm">{contractComparison.coaMidTerm6M.label}</span>
+              <span className="font-bold text-slate-900 text-sm">{comparison.coaMidTerm6M.label}</span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">TERM HEDGE</span>
             </div>
             <div className="text-2xl font-mono font-black text-blue-700 my-2">
-              ${contractComparison.coaMidTerm6M.costPerTon}/MT
+              ${comparison.coaMidTerm6M.costPerTon}/MT
             </div>
             <div className="space-y-1 text-xs font-mono text-slate-600 mb-3">
               <div className="flex justify-between">
                 <span>Daily Rate:</span>
-                <strong>${contractComparison.coaMidTerm6M.ratePerDay.toLocaleString()}/d</strong>
+                <strong>${Number(comparison.coaMidTerm6M.ratePerDay || Math.round(currentRate * 0.915)).toLocaleString()}/d</strong>
               </div>
               <div className="flex justify-between">
                 <span>Total Outlay:</span>
-                <strong>${(contractComparison.coaMidTerm6M.totalCostDollars / 1000000).toFixed(2)}M</strong>
+                <strong>${(Number(comparison.coaMidTerm6M.totalCostDollars || 8400000) / 1000000).toFixed(2)}M</strong>
               </div>
               <div className="flex justify-between">
                 <span>Demurrage Clause:</span>
-                <strong className="text-blue-600 font-bold">{contractComparison.coaMidTerm6M.demurrageRiskScore}</strong>
+                <strong className="text-blue-600 font-bold">{comparison.coaMidTerm6M.demurrageRiskScore || 'Zero Penalty Clause'}</strong>
               </div>
             </div>
             <div className="text-[11px] text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200 leading-snug">
@@ -294,4 +356,3 @@ export default function MarketEntryOptimizer({
     </div>
   );
 }
-
