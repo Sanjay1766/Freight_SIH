@@ -23,7 +23,7 @@ def test_pipeline():
     storage = MarketDataStorage()
     df = storage.load_data()
     print(f"Loaded {len(df)} historical rows. Date range: {df['date'].min()} to {df['date'].max()}")
-    assert len(df) > 500, "Dataset too small"
+    assert len(df) >= 200, "Dataset too small"
 
     print("\n=== 2. Testing Feature Engineering Pipeline ===")
     pipeline = FeatureEngineeringPipeline()

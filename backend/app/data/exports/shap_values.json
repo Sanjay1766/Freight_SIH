@@ -1,162 +1,162 @@
 {
-  "base_value": 20242.1,
-  "num_test_samples": 45,
+  "base_value": 24704.89,
+  "num_test_samples": 33,
   "features": [
     {
       "name": "lag_1",
       "display_name": "Spot Rate Lag 1-Day",
-      "mean_abs_shap": 1015.14,
-      "mean_signed_shap": 1015.14
+      "mean_abs_shap": 2354.98,
+      "mean_signed_shap": 2354.98
     },
     {
       "name": "lag_3",
       "display_name": "Spot Rate Lag 3-Day",
-      "mean_abs_shap": 320.57,
-      "mean_signed_shap": 320.57
+      "mean_abs_shap": 606.47,
+      "mean_signed_shap": 606.47
     },
     {
       "name": "lag_7",
       "display_name": "Spot Rate Lag 7-Day",
-      "mean_abs_shap": 143.47,
-      "mean_signed_shap": 133.01
+      "mean_abs_shap": 104.62,
+      "mean_signed_shap": 104.62
     },
     {
       "name": "lag_14",
       "display_name": "Spot Rate Lag 14-Day",
-      "mean_abs_shap": 165.93,
-      "mean_signed_shap": 165.93
+      "mean_abs_shap": 112.93,
+      "mean_signed_shap": 112.93
     },
     {
       "name": "lag_30",
       "display_name": "Spot Rate Lag 30-Day",
-      "mean_abs_shap": 60.97,
-      "mean_signed_shap": 60.97
+      "mean_abs_shap": 38.08,
+      "mean_signed_shap": 38.08
     },
     {
       "name": "rolling_mean_7",
       "display_name": "Rolling Mean 7-Day",
-      "mean_abs_shap": 520.13,
-      "mean_signed_shap": 520.13
+      "mean_abs_shap": 739.94,
+      "mean_signed_shap": 739.94
     },
     {
       "name": "rolling_mean_14",
       "display_name": "Rolling Mean 14-Day",
-      "mean_abs_shap": 281.83,
-      "mean_signed_shap": 281.83
+      "mean_abs_shap": 179.76,
+      "mean_signed_shap": 179.76
     },
     {
       "name": "rolling_mean_30",
       "display_name": "Rolling Mean 30-Day",
-      "mean_abs_shap": 430.43,
-      "mean_signed_shap": 430.43
+      "mean_abs_shap": 145.44,
+      "mean_signed_shap": 145.44
     },
     {
       "name": "rolling_vol_7",
       "display_name": "Rolling Volatility 7-Day",
-      "mean_abs_shap": 4.65,
-      "mean_signed_shap": -3.57
+      "mean_abs_shap": 77.0,
+      "mean_signed_shap": 9.81
     },
     {
       "name": "rolling_vol_30",
       "display_name": "Rolling Volatility 30-Day",
-      "mean_abs_shap": 48.67,
-      "mean_signed_shap": 45.07
+      "mean_abs_shap": 145.31,
+      "mean_signed_shap": 144.29
     },
     {
       "name": "mti_india",
       "display_name": "Market Tightness (MTI_India)",
-      "mean_abs_shap": 113.72,
-      "mean_signed_shap": 100.79
+      "mean_abs_shap": 18.96,
+      "mean_signed_shap": 12.84
     },
     {
       "name": "mti_ma7",
       "display_name": "MTI 7-Day Moving Avg",
-      "mean_abs_shap": 17.29,
-      "mean_signed_shap": -17.29
+      "mean_abs_shap": 13.97,
+      "mean_signed_shap": 13.75
     },
     {
       "name": "mti_momentum_7",
       "display_name": "MTI 7-Day Momentum",
-      "mean_abs_shap": 9.85,
-      "mean_signed_shap": 2.56
+      "mean_abs_shap": 5.47,
+      "mean_signed_shap": 0.83
     },
     {
       "name": "bunker_fuel",
       "display_name": "Bunker Fuel Price (VLSFO)",
-      "mean_abs_shap": 14.54,
-      "mean_signed_shap": 8.25
+      "mean_abs_shap": 27.99,
+      "mean_signed_shap": -19.65
     },
     {
       "name": "bunker_pct_change_7",
       "display_name": "Bunker 7-Day % Change",
-      "mean_abs_shap": 2.68,
-      "mean_signed_shap": -0.01
+      "mean_abs_shap": 19.21,
+      "mean_signed_shap": 0.79
     },
     {
       "name": "coal_index",
       "display_name": "Newcastle / Global Coal Index",
-      "mean_abs_shap": 7.84,
-      "mean_signed_shap": -3.62
+      "mean_abs_shap": 28.63,
+      "mean_signed_shap": 28.63
     },
     {
       "name": "coal_pct_change_14",
       "display_name": "Coal 14-Day % Change",
-      "mean_abs_shap": 8.14,
-      "mean_signed_shap": 0.84
+      "mean_abs_shap": 41.24,
+      "mean_signed_shap": -29.52
     },
     {
       "name": "indo_coal_index",
       "display_name": "Indonesian Coal Index (HBA)",
-      "mean_abs_shap": 21.67,
-      "mean_signed_shap": -11.37
+      "mean_abs_shap": 58.68,
+      "mean_signed_shap": 35.41
     },
     {
       "name": "dxy",
       "display_name": "USD Currency Index (DXY)",
-      "mean_abs_shap": 43.2,
-      "mean_signed_shap": -25.23
+      "mean_abs_shap": 259.32,
+      "mean_signed_shap": 259.32
     },
     {
       "name": "dxy_delta_7",
       "display_name": "DXY 7-Day Delta",
-      "mean_abs_shap": 2.44,
-      "mean_signed_shap": 0.66
+      "mean_abs_shap": 13.58,
+      "mean_signed_shap": -2.44
     },
     {
       "name": "bci_bdi_ratio",
       "display_name": "Capesize/BDI Ratio",
-      "mean_abs_shap": 4.37,
-      "mean_signed_shap": -0.24
+      "mean_abs_shap": 32.65,
+      "mean_signed_shap": 14.85
     },
     {
       "name": "bpi_bdi_ratio",
       "display_name": "Panamax/BDI Ratio",
-      "mean_abs_shap": 5.03,
-      "mean_signed_shap": 1.86
+      "mean_abs_shap": 41.08,
+      "mean_signed_shap": 13.95
     },
     {
       "name": "sin_day_of_year",
       "display_name": "Seasonality (sin)",
-      "mean_abs_shap": 15.21,
-      "mean_signed_shap": 3.17
+      "mean_abs_shap": 140.32,
+      "mean_signed_shap": -139.84
     },
     {
       "name": "cos_day_of_year",
       "display_name": "Seasonality (cos)",
-      "mean_abs_shap": 59.69,
-      "mean_signed_shap": 57.02
+      "mean_abs_shap": 315.53,
+      "mean_signed_shap": 315.53
     },
     {
       "name": "is_monsoon_season",
       "display_name": "Monsoon Season Flag",
-      "mean_abs_shap": 10.35,
-      "mean_signed_shap": 10.35
+      "mean_abs_shap": 46.39,
+      "mean_signed_shap": -46.39
     },
     {
       "name": "is_prewinter_restocking",
       "display_name": "Pre-Winter Restocking Flag",
-      "mean_abs_shap": 6.48,
-      "mean_signed_shap": 6.48
+      "mean_abs_shap": 40.81,
+      "mean_signed_shap": 40.81
     }
   ]
 }
