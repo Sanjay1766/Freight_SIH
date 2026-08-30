@@ -36,8 +36,12 @@ def optimize_multi_voyage_schedule(
         fc_point = forecast_series[horizon_idx]
         spot_rate = fc_point.get("pointForecast", 22000)
         
-        # Optimized CoA rate: 6% discount if scheduled in advance
-        optimized_rate = int(round(spot_rate * 0.94))
+        # A scheduled CoA is only counted when its discounted rate meets the
+        # procurement ceiling. Otherwise the lifting remains exposed to spot
+        # until a qualifying forward window is available.
+        discounted_coa_rate = int(round(spot_rate * 0.94))
+        meets_target = discounted_coa_rate <= target_coa_cost
+        optimized_rate = discounted_coa_rate if meets_target else spot_rate
         voyage_cost_spot = spot_rate * 22
         voyage_cost_opt = optimized_rate * 22
 
@@ -53,8 +57,11 @@ def optimize_multi_voyage_schedule(
             "etaDestination": eta_dest.strftime('%d %b %Y'),
             "expectedSpotRate": spot_rate,
             "optimizedCoARate": optimized_rate,
+            "discountedCoARate": discounted_coa_rate,
+            "targetCoACost": target_coa_cost,
+            "targetStatus": "WITHIN_TARGET" if meets_target else "DEFER_TARGET_EXCEEDED",
             "voyageSavingUSD": int(round(voyage_cost_spot - voyage_cost_opt)),
-            "berthStatus": "CONFIRMED_CLEARED",
+            "berthStatus": "CONFIRMED_CLEARED" if meets_target else "PENDING_TARGET_WINDOW",
             "berthClashRisk": "NONE"
         })
 
@@ -66,6 +73,7 @@ def optimize_multi_voyage_schedule(
         "totalBudgetOptimizedUSD": total_budget_optimized,
         "netPortfolioSavingsUSD": int(round(total_budget_spot - total_budget_optimized)),
         "savingsPercentage": round(((total_budget_spot - total_budget_optimized) / max(1, total_budget_spot)) * 100, 2),
+        "targetCoACost": target_coa_cost,
         "voyages": schedule_voyages
     }
 

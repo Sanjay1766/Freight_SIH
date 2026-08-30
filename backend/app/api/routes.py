@@ -1,3 +1,6 @@
+import os
+from threading import Lock
+
 from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -50,6 +53,15 @@ class MonteCarloRequest(BaseModel):
     bunkerPrice: float = 629.0
     iterations: int = 1000
 
+class ScheduleRequest(BaseModel):
+    targetCoACost: float = Field(default=21500.0, gt=0)
+
+_pipeline_update_lock = Lock()
+
+def _pipeline_refresh_enabled() -> bool:
+    """Keep expensive scrape-and-refit operations opt-in outside local development."""
+    return os.getenv("ENABLE_PIPELINE_REFRESH", "false").strip().lower() in {"1", "true", "yes"}
+
 @router.get("/health")
 def health_check():
     from backend.app.main import state
@@ -58,6 +70,7 @@ def health_check():
         "service": "OceanPulse Maritime Freight Intelligence API",
         "model_engine": "GARCH(1,1) + CatBoost + SHAP TreeExplainer + PuLP MILP Solver",
         "models_trained": state.is_ready,
+        "pipeline_refresh_enabled": _pipeline_refresh_enabled(),
         "historical_records": len(state.storage.df) if state.storage and state.storage.df is not None else 0,
         "date_range": {
             "start": str(state.storage.df.iloc[0]['date']) if state.storage and state.storage.df is not None and not state.storage.df.empty else None,
@@ -193,12 +206,12 @@ def get_arbitrage_comparison(req: ArbitrageRequest):
     )
 
 @router.post("/api/scheduler/multi-voyage")
-def get_multi_voyage_schedule(targetCoACost: float = 21500.0):
+def get_multi_voyage_schedule(req: ScheduleRequest):
     from backend.app.main import state
     last_row = state.storage.get_latest_row()
     latest_feat = state.feature_df.iloc[-1]
     fc = state.ensemble.generate_full_forecast(latest_feat, last_row, max_horizon=90)
-    return optimize_multi_voyage_schedule(fc["forecast"], target_coa_cost=targetCoACost)
+    return optimize_multi_voyage_schedule(fc["forecast"], target_coa_cost=req.targetCoACost)
 
 @router.post("/api/stress-test/monte-carlo")
 def get_monte_carlo_stress_test(req: MonteCarloRequest):
@@ -255,7 +268,18 @@ from fastapi.responses import FileResponse
 @router.post("/api/pipeline/update")
 def trigger_pipeline_update(background_tasks: BackgroundTasks):
     from backend.app.main import state, run_data_update_and_refit
-    background_tasks.add_task(run_data_update_and_refit)
+    if not _pipeline_refresh_enabled():
+        raise HTTPException(status_code=403, detail="Pipeline refresh is disabled. Set ENABLE_PIPELINE_REFRESH=true for local administrative use.")
+    if not _pipeline_update_lock.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="A pipeline refresh is already running")
+
+    def update_pipeline():
+        try:
+            run_data_update_and_refit()
+        finally:
+            _pipeline_update_lock.release()
+
+    background_tasks.add_task(update_pipeline)
     return {
         "status": "triggered",
         "message": "Live data scrape and model refit task dispatched in background.",

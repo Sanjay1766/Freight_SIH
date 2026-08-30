@@ -1,8 +1,8 @@
 # 🌊 OceanPulse: Intelligent Maritime Freight Forecasting & Prescriptive Procurement Suite
 
-[![Code Quality](https://img.shields.io/badge/lint-0_warnings_0_errors-emerald.svg)]()
+[![Code Quality](https://img.shields.io/badge/lint-verified_in_CI-blue.svg)]()
 [![Forecasting Model](https://img.shields.io/badge/model-GARCH(1%2C1)_%2B_CatBoost_TreeExplainer-orange.svg)]()
-[![Backtest Accuracy](https://img.shields.io/badge/MAPE-2.93%25_Out--of--Sample-brightgreen.svg)]()
+[![Data Mode](https://img.shields.io/badge/data-BDI_history_%2B_demo_proxies-amber.svg)]()
 [![Optimization Solver](https://img.shields.io/badge/solver-PuLP_MILP_Constrained-blue.svg)]()
 [![Target Ports](https://img.shields.io/badge/East_Coast_India-7_Ports_Supported-coral.svg)]()
 [![Origin Hubs](https://img.shields.io/badge/Global_Origins-5_Countries_9_Terminals-purple.svg)]()
@@ -10,18 +10,20 @@
 
 > **OceanPulse** is an enterprise-grade maritime freight rate intelligence, econometric volatility forecasting, and prescriptive vessel chartering suite designed for Indian bulk commodity procurement (thermal coal, coking coal, iron ore, limestone, and bauxite) across 7 East Coast Indian port gateways (**Paradip, Visakhapatnam, Gangavaram, Gopalpur, Dhamra, Sagar-Sandheads Anchorage, and Haldia Dock Complex**) from 5 global origin hubs (**Australia, Indonesia, United States, Mozambique, and Russia**).
 
+> **Data notice:** the included BDI history is paired with generated proxy covariates and a proxy freight-rate target for product development. Forecast metrics and operational recommendations are illustrative until the application is connected to traceable, licensed market and port data.
+
 ---
 
 ## 🏗️ System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph Sourcing ["1. Data Sourcing & Cleaning (972 Days: 2024-2026)"]
-        D1[Baltic Indices: BDI, BCI, BPI, BSI]
-        D2[Singapore 0.5% VLSFO Bunker Fuel]
-        D3[Newcastle & Indonesian Coal Benchmarks]
-        D4[USD Currency Index DXY]
-        D5[Seaborne Daily Cargo Volume MT]
+    subgraph Sourcing ["1. Data Sourcing & Cleaning (Bundled History + Development Proxies)"]
+        D1[BDI History]
+        D2[Generated Bunker Proxy]
+        D3[Generated Coal Proxy]
+        D4[Generated DXY Proxy]
+        D5[Generated Seaborne-Volume Proxy]
     end
 
     subgraph FeatureEng ["2. Econometric & Feature Engineering Pipeline (26 Features)"]
@@ -36,7 +38,7 @@ flowchart TD
     subgraph ML_Econometrics ["3. Dual-Branch ML & Volatility Engine"]
         direction TB
         GARCH["Tier 1: GARCH(1,1) Student-t MLE<br/>(ω=1.47e-6, α=0.010, β=0.950, P=0.960)<br/>95% Volatility Cone (1-90 Days)"]
-        CATBOOST["Tier 1: CatBoost Regressor (300 Trees)<br/>45-Day Holdout Backtest (MAPE=2.93%, RMSE=$1582)<br/>SHAP TreeExplainer Attributions"]
+        CATBOOST["Tier 1: CatBoost Regressor (300 Trees)<br/>Chronological next-day holdout<br/>SHAP TreeExplainer Attributions"]
         STACK["Tier 2: Stacking Ensemble<br/>Decaying Horizon Weight: w_GARCH(h) vs w_ML(h)"]
     end
 
@@ -64,13 +66,13 @@ flowchart TD
 
 To ensure full academic and regulatory audit compliance, OceanPulse explicitly delineates between machine-learned econometric models and deterministic maritime engineering solvers:
 
-### ✅ Real Machine-Learned & Econometric Models (Trained & Backtested)
+### ⚠️ Prototype Econometric Models (Trained & Backtested on Included Data)
 
 | Component | Methodology | Specification & Validation |
 | :--- | :--- | :--- |
-| **Econometric Volatility** | **GARCH(1,1) with Student's $t$ Error Distribution** | Fitted via Maximum Likelihood Estimation (`arch`) on 972 daily log returns. Stationary with persistence $P = \alpha + \beta = 0.960 < 1.0$, half-life $t_{1/2} = 17.0\text{ days}$, $\text{AIC} = 3596.24$. |
-| **Point Forecast Regressor** | **CatBoost Gradient Boosted Decision Trees** | 300 iterations, depth 5, learning rate 0.04, $L_2$ leaf reg 3.0. Evaluated on **45-day chronological holdout test set**: **MAPE = 2.93%**, **RMSE = \$1,582.75/day**, **Directional Accuracy = 52.27%**. |
-| **Model Explainability** | **SHAP TreeExplainer** | Exact Shapley value feature attribution computed across all 26 features. Base rate expected value $E[f(x)] = \$20,242/\text{day}$. |
+| **Econometric Volatility** | **GARCH(1,1) with Student's $t$ Error Distribution** | Fitted at startup to the bundled data. Inspect `/api/model/metrics` for the current estimated parameters. |
+| **Point Forecast Regressor** | **CatBoost Gradient Boosted Decision Trees** | Uses a chronological next-day holdout. Metrics depend on the loaded data and are exposed by `/api/model/metrics`; they are not a claim of live-market accuracy. |
+| **Model Explainability** | **SHAP TreeExplainer** | Produces feature attributions for the fitted prototype model. |
 | **Ensemble Stacking** | **Dynamic Horizon Decay Blending** | Merges short-term econometric spot persistence ($w_{\text{GARCH}}(1) = 0.70$) with long-term structural ML feature learning ($w_{\text{ML}}(90) = 0.88$). |
 
 ### ⚙️ Deterministic Operational & Maritime Logic (Rule-Based Engineering)
@@ -119,7 +121,7 @@ To ensure full academic and regulatory audit compliance, OceanPulse explicitly d
 | **6** | **Early Warnings (Obj D)** | 4-pillar risk radar (Congestion, Weather, Bunker, Chokepoints) & Parametric VaR (95%/99%). | Risk exposure |
 | **7** | **Master Scheduler** | Multi-voyage master procurement planner, laycan optimizer, and berth clash prevention solver. | Quarterly schedule |
 | **8** | **Monte Carlo Stress** | 1,000-path stochastic Monte Carlo simulation & landed cost probability density histogram. | Tail risk distribution |
-| **9** | **Model Accuracy Lab** | 45-day out-of-sample backtest, MAPE (2.93%), RMSE (\$1582/d), CatBoost feature weights. | Model governance |
+| **9** | **Model Accuracy Lab** | Chronological next-day holdout metrics and CatBoost feature weights for the loaded dataset. | Model governance |
 | **10** | **SHAP Attribution** | Feature-by-feature dollar-per-day impact breakdown driving forward rate predictions. | Model interpretability |
 
 ---
@@ -129,7 +131,7 @@ To ensure full academic and regulatory audit compliance, OceanPulse explicitly d
 All model artifacts are exported upon training and can be downloaded from the **Data Export Center** or via REST API:
 
 - `catboost_freight_model.cbm` (187 KB) — Trained CatBoost binary for standalone inference
-- `backtest_metrics.json` — 45-day out-of-sample predictions, actual spot fixtures, residual MAPE/RMSE
+- `backtest_metrics.json` — chronological next-day holdout predictions and metrics for the loaded dataset
 - `shap_values.json` — SHAP TreeExplainer attribution matrix across all 26 features
 - `feature_importances.json` — Normalized percentage feature importance ranking
 - `forecast_90d.json` — Complete 90-day programmatic forward curve array
@@ -167,6 +169,6 @@ npm run build
 ## 🎤 3-Minute Hackathon Pitch Script
 
 1. **The Hook (30s)**: "Indian steel, power, and cement producers spend billions importing coal and minerals through East Coast ports like Paradip, Vizag, and Haldia. Today, chartering decisions are made reactively on daily spot markets — leaving millions on the table and risking devastating demurrage queues."
-2. **The Innovation (60s)**: "OceanPulse is India's first end-to-end maritime procurement intelligence suite. We combine a **GARCH(1,1) Student-t econometric model** for volatility with a **CatBoost 300-tree regressor** that achieves **2.93% MAPE** on a 45-day holdout backtest. With **SHAP TreeExplainer**, every prediction is 100% transparent and explainable to risk committees."
-3. **The Prescriptive Value (60s)**: "We don't just forecast rates — we solve chartering. Our **PuLP MILP solver** matches parcels to optimal vessel classes, automates Haldia lightering at Sagar-Sandheads, grades vessels on IMO 2026 CII (A through E), and uses **Virtual Arrival slow-steaming** to save up to \$56,000 in fuel per voyage while eliminating empty ballast deadheading."
+2. **The Innovation (60s)**: "OceanPulse combines a **GARCH(1,1) Student-t econometric model** with a **CatBoost 300-tree regressor** and SHAP attributions. Current backtest metrics are published from the loaded dataset rather than hard-coded into the product."
+3. **The Prescriptive Value (60s)**: "We don't just forecast rates — we solve chartering. Our **PuLP MILP solver** evaluates vessel and port constraints, and the virtual-arrival engine models the trade-off between speed, fuel use, and berth waiting time. Production use requires validated operational and market inputs."
 4. **The Close (30s)**: "OceanPulse turns maritime logistics from an operational cost center into a strategic competitive advantage for India's industrial growth."

@@ -24,6 +24,10 @@ logger = logging.getLogger(__name__)
 
 EXPORTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "exports")
 
+def _write_json(path: str, payload: dict) -> None:
+    with open(path, "w") as file:
+        json.dump(payload, file, indent=2)
+
 ROUTE_RISK_FACTORS = {
     'Australia_Newcastle': {'baseMultiplier': 1.05, 'volBeta': 1.12, 'weatherSensitivity': 1.10, 'name': 'Australia Cape/Panamax Lane'},
     'Australia_HayPoint': {'baseMultiplier': 1.04, 'volBeta': 1.10, 'weatherSensitivity': 1.08, 'name': 'Queensland Met Coal Lane'},
@@ -337,13 +341,31 @@ class CatBoostFreightRegressor:
         ]
 
     def _export_artifacts(self, X: pd.DataFrame, y: pd.Series):
-        """Export model file (.cbm), backtest metrics JSON, SHAP JSON to exports directory."""
+        """Export artifacts without letting a locked prior export block model training."""
         os.makedirs(EXPORTS_DIR, exist_ok=True)
+
+        def replace_atomically(destination: str, writer, label: str) -> bool:
+            temporary = f"{destination}.tmp"
+            try:
+                writer(temporary)
+                os.replace(temporary, destination)
+                logger.info(f"{label} exported to {destination}")
+                return True
+            except Exception as exc:
+                # An artifact can be open in a browser or virus scanner on Windows.
+                # The in-memory model remains valid and the prior export is retained.
+                logger.warning(f"Could not update {label} export: {exc}")
+                return False
+            finally:
+                if os.path.exists(temporary):
+                    try:
+                        os.remove(temporary)
+                    except OSError:
+                        pass
 
         # 1. Save CatBoost model binary
         model_path = os.path.join(EXPORTS_DIR, "catboost_freight_model.cbm")
-        self.model.save_model(model_path)
-        logger.info(f"CatBoost model exported to {model_path}")
+        replace_atomically(model_path, self.model.save_model, "CatBoost model")
 
         # 2. Save backtest metrics JSON
         metrics_path = os.path.join(EXPORTS_DIR, "backtest_metrics.json")
@@ -352,9 +374,7 @@ class CatBoostFreightRegressor:
             "top_features": [{"feature": k, "importance_pct": v} for k, v in self.metrics.get("top_features", [])],
             "backtest_predictions": self.backtest_predictions
         }
-        with open(metrics_path, "w") as f:
-            json.dump(export_metrics, f, indent=2)
-        logger.info(f"Backtest metrics exported to {metrics_path}")
+        replace_atomically(metrics_path, lambda path: _write_json(path, export_metrics), "Backtest metrics")
 
         # 3. Save SHAP values JSON
         if self.shap_values_cache is not None:
@@ -374,15 +394,11 @@ class CatBoostFreightRegressor:
                     for i in range(len(self.shap_feature_names))
                 ]
             }
-            with open(shap_path, "w") as f:
-                json.dump(shap_export, f, indent=2)
-            logger.info(f"SHAP values exported to {shap_path}")
+            replace_atomically(shap_path, lambda path: _write_json(path, shap_export), "SHAP values")
 
         # 4. Save feature importances JSON
         fi_path = os.path.join(EXPORTS_DIR, "feature_importances.json")
-        with open(fi_path, "w") as f:
-            json.dump(self.feature_importances, f, indent=2)
-        logger.info(f"Feature importances exported to {fi_path}")
+        replace_atomically(fi_path, lambda path: _write_json(path, self.feature_importances), "Feature importances")
 
 
 # Backward-compatibility alias

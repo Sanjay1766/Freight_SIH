@@ -21,7 +21,16 @@ import ExecutiveBriefingModal from './components/ExecutiveBriefingModal';
 import FreightQuoteModal from './components/FreightQuoteModal';
 import ExecutiveReportModal from './components/ExecutiveReportModal';
 import CopilotAssistant from './components/CopilotAssistant';
-import { RefreshCw } from 'lucide-react';
+
+// End-User / Port Operations Views
+import ArrivalsDashboard from './components/enduser/ArrivalsDashboard';
+import PricingStatus from './components/enduser/PricingStatus';
+import SchedulingBoard from './components/enduser/SchedulingBoard';
+import AlertsPanel from './components/enduser/AlertsPanel';
+import QuickReports from './components/enduser/QuickReports';
+import HelpSupport from './components/enduser/HelpSupport';
+
+import { RefreshCw, Bot } from 'lucide-react';
 
 import { generateHistoricalData } from './services/dataPipeline';
 import { generateForecast } from './services/forecastingEngine';
@@ -40,6 +49,7 @@ import {
 } from './services/apiClient';
 
 export default function App() {
+  const [appMode, setAppMode] = useState('executive'); // 'executive' | 'operations'
   const [selectedPreset, setSelectedPreset] = useState('normal');
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isBriefingOpen, setIsBriefingOpen] = useState(false);
@@ -52,9 +62,10 @@ export default function App() {
     connected: false,
     checking: true,
     records: 972,
-    engine: 'GARCH(1,1) + LightGBM + PuLP MILP Solver',
+    engine: 'GARCH(1,1) + CatBoost + PuLP MILP Solver',
     lastUpdate: null,
-    isUpdating: false
+    isUpdating: false,
+    refreshEnabled: false
   });
   const [backendForecast, setBackendForecast] = useState(null);
   const [backendHistory, setBackendHistory] = useState(null);
@@ -100,9 +111,10 @@ export default function App() {
             connected: true,
             checking: false,
             records: health.historical_records || 972,
-            engine: health.model_engine || 'GARCH(1,1) + LightGBM + PuLP MILP Solver',
+            engine: health.model_engine || 'GARCH(1,1) + CatBoost + PuLP MILP Solver',
             lastUpdate: health.last_update,
-            isUpdating: false
+            isUpdating: false,
+            refreshEnabled: health.pipeline_refresh_enabled === true
           });
 
           const metrics = await fetchModelMetrics();
@@ -297,135 +309,216 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-[#FF3B00] selection:text-white">
+    <div className="min-h-screen bg-[#f3f5f7] text-slate-800 font-sans selection:bg-[#dce7ea] selection:text-slate-900">
       
       {/* 1. Logistico Main Header */}
       <LogisticoNavbar
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        appMode={appMode}
+        onModeChange={setAppMode}
         onOpenQuoteModal={() => setIsQuoteModalOpen(true)}
         onOpenReportModal={() => setIsReportModalOpen(true)}
         onOpenCopilot={() => setIsCopilotOpen(true)}
       />
 
-      {/* 2. Enterprise Hero Banner */}
-      <LogisticoHero
-        onOpenQuoteModal={() => setIsQuoteModalOpen(true)}
-        onOpenBriefing={() => setIsBriefingOpen(true)}
-        onOpenReportModal={() => setIsReportModalOpen(true)}
-      />
+      {/* 2. Enterprise Hero Banner (Executive Mode) */}
+      {appMode === 'executive' && activeTab === 'dashboard' && (
+        <LogisticoHero
+          onOpenQuoteModal={() => setIsQuoteModalOpen(true)}
+          onOpenBriefing={() => setIsBriefingOpen(true)}
+          onOpenReportModal={() => setIsReportModalOpen(true)}
+        />
+      )}
 
       {/* Main Workspace Container */}
-      <div className="max-w-[1650px] mx-auto px-4 md:px-8 py-8 space-y-8">
+      <div className="max-w-[1720px] mx-auto px-4 md:px-8 py-8 space-y-8">
         
-        {/* Backend & Live Model Pipeline Status Banner */}
-        <div className={`p-4 rounded-xl border flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm transition-all ${
-          backendState.connected
-            ? 'bg-emerald-950/10 border-emerald-500/30 text-emerald-900'
-            : 'bg-amber-950/10 border-amber-500/30 text-amber-900'
+        {/* Compact market status */}
+        <div className={`rounded-2xl border bg-white px-4 py-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all ${
+          backendState.connected ? 'border-emerald-200' : 'border-amber-200'
         }`}>
           <div className="flex items-center gap-3">
-            <div className={`w-3.5 h-3.5 rounded-full animate-pulse shrink-0 ${
-              backendState.connected ? 'bg-emerald-500 shadow-lg shadow-emerald-500/50' : 'bg-amber-500'
+            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+              backendState.connected ? 'bg-emerald-500' : 'bg-amber-500'
             }`} />
             <div>
-              <div className="flex items-center gap-2 font-bold text-xs">
-                <span className="font-heading font-extrabold uppercase tracking-wide">
-                  {backendState.connected ? 'FastAPI Live Backend Active' : 'Client-Side Offline Engine'}
-                </span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-white/80 border border-slate-200">
-                  {backendState.engine}
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <span className="font-heading font-bold text-slate-800">
+                  {backendState.connected ? 'Market data is up to date' : 'Using the latest available market snapshot'}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 {backendState.connected
-                  ? `Sourced live from Baltic Dry Index (3,186), Ship & Bunker Singapore ($629/MT), Coal Benchmark ($139.75/MT), and FRED DXY (99.16) across ${backendState.records} daily records.`
-                  : 'Backend starting or unreachable at http://localhost:8000; seamlessly operating via calibrated client engine.'}
+                  ? `${backendState.records} market observations are informing today's recommendations.`
+                  : 'You can still explore forecasts and plans while the live feed reconnects.'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0">
             {backendState.lastUpdate && (
-              <span className="text-[10px] font-mono text-slate-500 hidden lg:inline">
-                Live Synced: {new Date(backendState.lastUpdate).toLocaleTimeString()}
+              <span className="text-xs text-slate-500 hidden lg:inline">
+                Updated {new Date(backendState.lastUpdate).toLocaleTimeString()}
               </span>
             )}
             <button
               onClick={handleTriggerUpdate}
-              disabled={backendState.isUpdating}
-              className="px-3.5 py-1.5 rounded-lg bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+              disabled={backendState.isUpdating || !backendState.refreshEnabled}
+              className="px-3.5 py-2 rounded-xl bg-white border border-slate-300 hover:border-slate-400 text-slate-700 font-semibold text-xs flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 text-[#FF3B00] ${backendState.isUpdating ? 'animate-spin' : ''}`} />
-              {backendState.isUpdating ? 'Scraping Live Feeds...' : 'Refresh Live Market Feeds'}
+              <RefreshCw className={`w-3.5 h-3.5 text-orange-400 ${backendState.isUpdating ? 'animate-spin' : ''}`} />
+              {backendState.isUpdating ? 'Updating…' : backendState.refreshEnabled ? 'Refresh data' : 'Refresh disabled'}
             </button>
           </div>
         </div>
 
-        {/* Enterprise KPI Overview Cards */}
-        <KPIOverviewBar lastHistoryPoint={lastHistoryPoint} />
-
-        {/* Scenario & Parameter Simulator */}
-        <WhatIfControls
-          selectedPreset={selectedPreset}
-          onPresetChange={setSelectedPreset}
-          selectedHorizon={selectedHorizon}
-          onHorizonChange={setSelectedHorizon}
-          thetaRisk={thetaRisk}
-          onThetaRiskChange={setThetaRisk}
-          targetCoACost={targetCoACost}
-          onTargetCoACostChange={setTargetCoACost}
-          bunkerOffset={bunkerOffset}
-          onBunkerOffsetChange={setBunkerOffset}
-          cargoQuantity={cargoQuantity}
-          onCargoQuantityChange={setCargoQuantity}
-          selectedOriginKey={selectedOriginKey}
-          onOriginChange={setSelectedOriginKey}
-          onResetControls={handleResetControls}
-        />
-
-        {/* TAB 1: MAIN DASHBOARD VIEW */}
-        {activeTab === 'dashboard' && (
-          <div className="space-y-8">
-            <InteractiveGeoMap
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-              onOriginChange={setSelectedOriginKey}
-            />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <RiskConeChart
-                historySeries={historySeries}
-                forecastData={forecast}
-                volatilityStats={volatilityStats}
-                selectedHorizon={selectedHorizon}
-                onSelectHorizon={setSelectedHorizon}
-              />
-
-              <MTIChart historySeries={historySeries} />
+        {/* ========================================================================= */}
+        {/* VIEW MODE A: PORT OPERATIONS PORTAL                                       */}
+        {/* ========================================================================= */}
+        {appMode === 'operations' && (
+          <div className="space-y-6">
+            <div className="glass-panel p-6 border border-cyan-500/30 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h1 className="text-2xl font-black font-heading text-white flex items-center gap-2">
+                    <span className="text-cyan-400">⚓</span> East Coast Port Operations Center
+                  </h1>
+                  <p className="text-xs font-mono text-slate-400 mt-1">
+                    Direct terminal management, vessel arrivals telemetry, berth timeline, and instant reporting.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="badge-neon-cyan">PARADIP PORT AUTHORITY</span>
+                  <span className="badge-neon-emerald">GOPALPUR • HALDIA • VIZAG</span>
+                </div>
+              </div>
             </div>
 
-            <OriginArbitrageComparator
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              cargoQuantity={cargoQuantity}
-              bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
-              selectedHorizonForecast={selectedHorizonForecast}
-              decisionTrigger={decisionTrigger}
-              onSelectOrigin={handleSelectArbitrageOrigin}
-              arbitrageData={backendArbitrage}
-            />
+            {activeTab === 'arrivals' && <ArrivalsDashboard />}
+            {activeTab === 'pricing' && <PricingStatus />}
+            {activeTab === 'scheduling' && <SchedulingBoard />}
+            {activeTab === 'alerts' && <AlertsPanel />}
+            {activeTab === 'reports' && <QuickReports />}
+            {activeTab === 'help' && <HelpSupport />}
+          </div>
+        )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-1">
-                <ShapWaterfall
-                  selectedHorizonForecast={selectedHorizonForecast}
-                  lastHistoryPoint={lastHistoryPoint}
+        {/* ========================================================================= */}
+        {/* VIEW MODE B: EXECUTIVE INTELLIGENCE COCKPIT                               */}
+        {/* ========================================================================= */}
+        {appMode === 'executive' && (
+          <>
+            {/* Enterprise KPI Overview Cards */}
+            <KPIOverviewBar lastHistoryPoint={lastHistoryPoint} />
+
+            {/* Planning controls stay available on focused analysis pages. */}
+            {activeTab !== 'dashboard' && <WhatIfControls
+              selectedPreset={selectedPreset}
+              onPresetChange={setSelectedPreset}
+              selectedHorizon={selectedHorizon}
+              onHorizonChange={setSelectedHorizon}
+              thetaRisk={thetaRisk}
+              onThetaRiskChange={setThetaRisk}
+              targetCoACost={targetCoACost}
+              onTargetCoACostChange={setTargetCoACost}
+              bunkerOffset={bunkerOffset}
+              onBunkerOffsetChange={setBunkerOffset}
+              cargoQuantity={cargoQuantity}
+              onCargoQuantityChange={setCargoQuantity}
+              selectedOriginKey={selectedOriginKey}
+              onOriginChange={setSelectedOriginKey}
+              onResetControls={handleResetControls}
+            />}
+
+            {/* TAB 1: MAIN DASHBOARD VIEW */}
+            {activeTab === 'dashboard' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                  <section className="xl:col-span-1 rounded-2xl bg-[#17324d] p-6 text-white shadow-sm">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#b9d8df]">Recommended next step</p>
+                    <h2 className="mt-3 text-2xl font-bold leading-tight">
+                      {decisionTrigger?.action === 'FIX_COA_NOW' ? 'Secure a short-term contract' : 'Keep the next shipment on spot'}
+                    </h2>
+                    <p className="mt-3 text-sm leading-6 text-slate-200">
+                      {decisionTrigger?.rationale || `For ${selectedOriginKey.replace('_', ' ')} to ${selectedPortKey}, current costs remain within the selected budget range.`}
+                    </p>
+                    <div className="mt-5 flex items-center justify-between border-t border-white/15 pt-4 text-sm">
+                      <span className="text-slate-300">Planning horizon</span>
+                      <strong>{selectedHorizon} days</strong>
+                    </div>
+                  </section>
+
+                  <section className="xl:col-span-2 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#2f7d8c]">Today at a glance</p>
+                        <h2 className="mt-1 text-xl font-bold text-slate-800">Keep the team focused on what needs attention</h2>
+                      </div>
+                      <button onClick={() => setAppMode('operations')} className="text-sm font-semibold text-[#2f7d8c] hover:text-[#17324d]">Open operations →</button>
+                    </div>
+                    <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="rounded-xl bg-[#f5f8f9] p-4"><p className="text-xs text-slate-500">Next arrival</p><p className="mt-1 font-bold text-slate-800">MV Orient Phoenix</p><p className="mt-1 text-sm text-slate-600">Berth 3 · 14h delay</p></div>
+                      <div className="rounded-xl bg-[#f5f8f9] p-4"><p className="text-xs text-slate-500">Route in focus</p><p className="mt-1 font-bold text-slate-800">{selectedPortKey}</p><p className="mt-1 text-sm text-slate-600">From {selectedOriginKey.split('_')[0]}</p></div>
+                      <div className="rounded-xl bg-[#f5f8f9] p-4"><p className="text-xs text-slate-500">Market watch</p><p className="mt-1 font-bold text-slate-800">{riskAnalysis?.overallRiskStatus || 'Normal'}</p><p className="mt-1 text-sm text-slate-600">Review fuel trend this week</p></div>
+                    </div>
+                  </section>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <RiskConeChart
+                    historySeries={historySeries}
+                    forecastData={forecast}
+                    volatilityStats={volatilityStats}
+                    selectedHorizon={selectedHorizon}
+                    onSelectHorizon={setSelectedHorizon}
+                  />
+
+                  <EarlyWarningRiskPanel riskAnalysis={riskAnalysis} selectedPortKey={selectedPortKey} onPortChange={setSelectedPortKey} />
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: OPTIMAL MARKET ENTRY & COA TIMING (OBJECTIVE A) */}
+            {activeTab === 'timing' && (
+              <div className="space-y-8">
+                <MarketEntryOptimizer
+                  forecastData={forecast}
+                  entryWindows={entryWindows}
+                  decisionTrigger={decisionTrigger}
+                  contractComparison={optimizationResults.contractComparison}
+                  selectedHorizon={selectedHorizon}
+                  onSelectHorizon={setSelectedHorizon}
+                  targetCoACost={targetCoACost}
+                />
+
+                <RiskConeChart
+                  historySeries={historySeries}
+                  forecastData={forecast}
+                  volatilityStats={volatilityStats}
+                  selectedHorizon={selectedHorizon}
+                  onSelectHorizon={setSelectedHorizon}
                 />
               </div>
+            )}
 
-              <div className="lg:col-span-2">
+            {/* TAB 3: PORT MATRIX & FLEET RADAR (OBJECTIVE B) */}
+            {activeTab === 'maritime' && (
+              <div className="space-y-8">
+                <InteractiveGeoMap
+                  selectedPortKey={selectedPortKey}
+                  onPortChange={setSelectedPortKey}
+                  selectedOriginKey={selectedOriginKey}
+                  onOriginChange={setSelectedOriginKey}
+                />
+
+                <PortVesselMap
+                  selectedPortKey={selectedPortKey}
+                  onPortChange={setSelectedPortKey}
+                  selectedOriginKey={selectedOriginKey}
+                  onOriginChange={setSelectedOriginKey}
+                />
+
                 <PrescriptiveOptimizerPanel
                   selectedHorizonForecast={selectedHorizonForecast}
                   decisionTrigger={decisionTrigger}
@@ -438,222 +531,174 @@ export default function App() {
                   optimizationResults={optimizationResults}
                 />
               </div>
-            </div>
+            )}
 
-            <DataExportCenter
-              forecastData={forecast}
-              historySeries={historySeries}
-              selectedPortKey={selectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-            />
-          </div>
-        )}
+            {/* TAB: MULTI-ORIGIN ARBITRAGE COMPARATOR */}
+            {activeTab === 'arbitrage' && (
+              <div className="space-y-8">
+                <OriginArbitrageComparator
+                  selectedPortKey={selectedPortKey}
+                  onPortChange={setSelectedPortKey}
+                  cargoQuantity={cargoQuantity}
+                  bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
+                  selectedHorizonForecast={selectedHorizonForecast}
+                  decisionTrigger={decisionTrigger}
+                  onSelectOrigin={handleSelectArbitrageOrigin}
+                  arbitrageData={backendArbitrage}
+                />
 
-        {/* TAB 2: OPTIMAL MARKET ENTRY & COA TIMING (OBJECTIVE A) */}
-        {activeTab === 'timing' && (
-          <div className="space-y-8">
-            <MarketEntryOptimizer
-              forecastData={forecast}
-              entryWindows={entryWindows}
-              decisionTrigger={decisionTrigger}
-              contractComparison={optimizationResults.contractComparison}
-              selectedHorizon={selectedHorizon}
-              onSelectHorizon={setSelectedHorizon}
-              targetCoACost={targetCoACost}
-            />
+                <InteractiveGeoMap
+                  selectedPortKey={selectedPortKey}
+                  onPortChange={setSelectedPortKey}
+                  selectedOriginKey={selectedOriginKey}
+                  onOriginChange={setSelectedOriginKey}
+                />
+              </div>
+            )}
 
-            <RiskConeChart
-              historySeries={historySeries}
-              forecastData={forecast}
-              volatilityStats={volatilityStats}
-              selectedHorizon={selectedHorizon}
-              onSelectHorizon={setSelectedHorizon}
-            />
-          </div>
-        )}
+            {/* TAB 4: IDLE SCENARIO & BACKHAUL OPTIMIZER (OBJECTIVE C) */}
+            {activeTab === 'turnaround' && (
+              <div className="space-y-8">
+                <IdleScenarioManager
+                  bestSolution={optimizationResults.bestSolution}
+                  selectedPortKey={selectedPortKey}
+                  cargoQuantity={cargoQuantity}
+                  bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
+                  backendTurnaround={backendTurnaround}
+                />
 
-        {/* TAB 3: PORT MATRIX & FLEET RADAR (OBJECTIVE B) */}
-        {activeTab === 'maritime' && (
-          <div className="space-y-8">
-            <InteractiveGeoMap
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-              onOriginChange={setSelectedOriginKey}
-            />
+                <InteractiveGeoMap
+                  selectedPortKey={selectedPortKey}
+                  onPortChange={setSelectedPortKey}
+                  selectedOriginKey={selectedOriginKey}
+                  onOriginChange={setSelectedOriginKey}
+                />
+              </div>
+            )}
 
-            <PortVesselMap
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-              onOriginChange={setSelectedOriginKey}
-            />
+            {/* TAB 5: EARLY WARNING & RISK MITIGATION (OBJECTIVE D) */}
+            {activeTab === 'risk' && (
+              <div className="space-y-8">
+                <EarlyWarningRiskPanel
+                  riskAnalysis={riskAnalysis}
+                  selectedPortKey={selectedPortKey}
+                  onPortChange={setSelectedPortKey}
+                />
 
-            <PrescriptiveOptimizerPanel
-              selectedHorizonForecast={selectedHorizonForecast}
-              decisionTrigger={decisionTrigger}
-              bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
-              cargoQuantity={cargoQuantity}
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-              onOriginChange={setSelectedOriginKey}
-              optimizationResults={optimizationResults}
-            />
-          </div>
-        )}
+                <RiskConeChart
+                  historySeries={historySeries}
+                  forecastData={forecast}
+                  volatilityStats={volatilityStats}
+                  selectedHorizon={selectedHorizon}
+                  onSelectHorizon={setSelectedHorizon}
+                />
+              </div>
+            )}
 
-        {/* TAB: MULTI-ORIGIN ARBITRAGE COMPARATOR */}
-        {activeTab === 'arbitrage' && (
-          <div className="space-y-8">
-            <OriginArbitrageComparator
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              cargoQuantity={cargoQuantity}
-              bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
-              selectedHorizonForecast={selectedHorizonForecast}
-              decisionTrigger={decisionTrigger}
-              onSelectOrigin={handleSelectArbitrageOrigin}
-              arbitrageData={backendArbitrage}
-            />
+            {/* TAB 6: MASTER MULTI-VOYAGE SCHEDULER */}
+            {activeTab === 'scheduler' && (
+              <div className="space-y-8">
+                <MultiVoyageScheduler
+                  forecastData={forecast}
+                  targetCoACost={targetCoACost}
+                  backendSchedule={backendSchedule}
+                />
 
-            <InteractiveGeoMap
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-              onOriginChange={setSelectedOriginKey}
-            />
-          </div>
-        )}
+                <InteractiveGeoMap
+                  selectedPortKey={selectedPortKey}
+                  onPortChange={setSelectedPortKey}
+                  selectedOriginKey={selectedOriginKey}
+                  onOriginChange={setSelectedOriginKey}
+                />
+              </div>
+            )}
 
-        {/* TAB 4: IDLE SCENARIO & BACKHAUL OPTIMIZER (OBJECTIVE C) */}
-        {activeTab === 'turnaround' && (
-          <div className="space-y-8">
-            <IdleScenarioManager
-              bestSolution={optimizationResults.bestSolution}
-              selectedPortKey={selectedPortKey}
-              cargoQuantity={cargoQuantity}
-              bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
-              backendTurnaround={backendTurnaround}
-            />
+            {/* TAB 7: MONTE CARLO STRESS TEST */}
+            {activeTab === 'stress' && (
+              <div className="space-y-8">
+                <MonteCarloStressTest
+                  selectedHorizonForecast={selectedHorizonForecast}
+                  volatilityStats={volatilityStats}
+                  cargoQuantity={cargoQuantity}
+                  backendMonteCarlo={backendMonteCarlo}
+                />
 
-            <InteractiveGeoMap
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-              onOriginChange={setSelectedOriginKey}
-            />
-          </div>
-        )}
+                <RiskConeChart
+                  historySeries={historySeries}
+                  forecastData={forecast}
+                  volatilityStats={volatilityStats}
+                  selectedHorizon={selectedHorizon}
+                  onSelectHorizon={setSelectedHorizon}
+                />
+              </div>
+            )}
 
-        {/* TAB 5: EARLY WARNING & RISK MITIGATION (OBJECTIVE D) */}
-        {activeTab === 'risk' && (
-          <div className="space-y-8">
-            <EarlyWarningRiskPanel
-              riskAnalysis={riskAnalysis}
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-            />
+            {/* TAB 8: MODEL ACCURACY & GOVERNANCE LAB */}
+            {activeTab === 'validation' && (
+              <div className="space-y-8">
+                <ModelValidationLab historySeries={historySeries} backendMetrics={backendMetrics} />
 
-            <RiskConeChart
-              historySeries={historySeries}
-              forecastData={forecast}
-              volatilityStats={volatilityStats}
-              selectedHorizon={selectedHorizon}
-              onSelectHorizon={setSelectedHorizon}
-            />
-          </div>
-        )}
+                <DataExportCenter
+                  forecastData={forecast}
+                  historySeries={historySeries}
+                  selectedPortKey={selectedPortKey}
+                  selectedOriginKey={selectedOriginKey}
+                />
+              </div>
+            )}
 
-        {/* TAB 6: MASTER MULTI-VOYAGE SCHEDULER */}
-        {activeTab === 'scheduler' && (
-          <div className="space-y-8">
-            <MultiVoyageScheduler
-              forecastData={forecast}
-              targetCoACost={targetCoACost}
-              backendSchedule={backendSchedule}
-            />
-
-            <InteractiveGeoMap
-              selectedPortKey={selectedPortKey}
-              onPortChange={setSelectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-              onOriginChange={setSelectedOriginKey}
-            />
-          </div>
-        )}
-
-        {/* TAB 7: MONTE CARLO STRESS TEST */}
-        {activeTab === 'stress' && (
-          <div className="space-y-8">
-            <MonteCarloStressTest
-              selectedHorizonForecast={selectedHorizonForecast}
-              volatilityStats={volatilityStats}
-              cargoQuantity={cargoQuantity}
-              backendMonteCarlo={backendMonteCarlo}
-            />
-
-            <RiskConeChart
-              historySeries={historySeries}
-              forecastData={forecast}
-              volatilityStats={volatilityStats}
-              selectedHorizon={selectedHorizon}
-              onSelectHorizon={setSelectedHorizon}
-            />
-          </div>
-        )}
-
-        {/* TAB 8: MODEL ACCURACY & GOVERNANCE LAB */}
-        {activeTab === 'validation' && (
-          <div className="space-y-8">
-            <ModelValidationLab historySeries={historySeries} backendMetrics={backendMetrics} />
-
-            <DataExportCenter
-              forecastData={forecast}
-              historySeries={historySeries}
-              selectedPortKey={selectedPortKey}
-              selectedOriginKey={selectedOriginKey}
-            />
-          </div>
-        )}
-
-        {/* TAB 9: SHAP ANALYTICS & EXPLAINABILITY */}
-        {activeTab === 'shap' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-1">
-              <ShapWaterfall
-                selectedHorizonForecast={selectedHorizonForecast}
-                lastHistoryPoint={lastHistoryPoint}
-              />
-            </div>
-            <div className="lg:col-span-2 space-y-8">
-              <RiskConeChart
-                historySeries={historySeries}
-                forecastData={forecast}
-                volatilityStats={volatilityStats}
-                selectedHorizon={selectedHorizon}
-                onSelectHorizon={setSelectedHorizon}
-              />
-              <MTIChart historySeries={historySeries} />
-            </div>
-          </div>
+            {/* TAB 9: SHAP ANALYTICS & EXPLAINABILITY */}
+            {activeTab === 'shap' && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-1">
+                  <ShapWaterfall
+                    selectedHorizonForecast={selectedHorizonForecast}
+                    lastHistoryPoint={lastHistoryPoint}
+                  />
+                </div>
+                <div className="lg:col-span-2 space-y-8">
+                  <RiskConeChart
+                    historySeries={historySeries}
+                    forecastData={forecast}
+                    volatilityStats={volatilityStats}
+                    selectedHorizon={selectedHorizon}
+                    onSelectHorizon={setSelectedHorizon}
+                  />
+                  <MTIChart historySeries={historySeries} />
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Website Footer */}
-        <footer className="card-clean p-6 text-center text-xs text-slate-500 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <footer className="glass-panel p-6 text-center text-xs text-slate-400 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
-            <strong className="text-slate-800">OceanPulse Intelligence Suite</strong> — Data-Driven Maritime Logistics & Prescriptive Procurement.
+            <strong className="text-white">OceanPulse Freight Intelligence Suite</strong> — Data-Driven Maritime Logistics & Prescriptive Procurement.
           </div>
-          <div className="flex items-center gap-4 text-[11px] font-mono">
-            <span>IMO 2026 Ready</span>
+          <div className="flex items-center gap-4 text-[11px] font-mono text-slate-400">
+            <span className="text-emerald-400">● IMO 2026 Ready</span>
             <span>•</span>
-            <span>GARCH(1,1) Volatility Cone</span>
+            <span className="text-cyan-400">● GARCH(1,1) Volatility Cone</span>
             <span>•</span>
-            <span>PuLP Constrained Solver</span>
+            <span className="text-orange-400">● PuLP MILP Constrained Solver</span>
           </div>
         </footer>
 
       </div>
+
+      {/* Floating AI Maritime Copilot Trigger */}
+      <button 
+        onClick={() => setIsCopilotOpen(true)}
+        className="fixed bottom-6 right-6 z-40 p-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-2xl shadow-purple-500/40 border border-purple-400/40 flex items-center gap-2.5 group hover:scale-105 active:scale-95 transition-all"
+        title="Open Maritime AI Procurement Copilot"
+      >
+        <div className="relative">
+          <Bot className="w-5 h-5 text-white animate-bounce" />
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-cyan-400 border border-slate-950 animate-ping" />
+        </div>
+        <span className="font-heading font-extrabold text-xs hidden md:inline">AI Copilot</span>
+      </button>
 
       {/* Modals & AI Copilot */}
       <ExecutiveBriefingModal
@@ -690,3 +735,4 @@ export default function App() {
     </div>
   );
 }
+

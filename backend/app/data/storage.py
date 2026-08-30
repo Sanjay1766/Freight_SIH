@@ -14,9 +14,9 @@ def ensure_dirs():
 
 def generate_base_historical_dataset(csv_path: str = CSV_PATH) -> pd.DataFrame:
     """
-    Ingests official Baltic Dry Index (BDIY) historical time series from Koyfin export,
-    aligns to daily calendar frequency (forward-filling weekends/holidays),
-    and derives vessel class sub-indices and macroeconomic features.
+    Ingests the supplied Baltic Dry Index (BDIY) time series and derives demo
+    covariates and a proxy target. These generated fields are useful for local
+    interface development, but are not a substitute for licensed market data.
     """
     ensure_dirs()
     

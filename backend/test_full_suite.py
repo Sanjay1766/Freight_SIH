@@ -1,12 +1,7 @@
 import os
 import sys
 
-# Auto-re-execute with dedicated venv if running from global system python
 backend_dir = os.path.dirname(os.path.abspath(__file__))
-venv_python = os.path.join(backend_dir, "venv", "bin", "python")
-
-if os.path.exists(venv_python) and sys.executable != venv_python and "venv" not in sys.prefix:
-    os.execv(venv_python, [venv_python] + sys.argv)
 
 PROJECT_ROOT = os.path.dirname(backend_dir)
 if PROJECT_ROOT not in sys.path:
@@ -80,6 +75,8 @@ def test_full_suite():
     print("Total Scheduled Voyages:", schedule["totalVoyages"])
     print("Portfolio Savings vs Spot:", f"${schedule['netPortfolioSavingsUSD']:,} ({schedule['savingsPercentage']}%)")
     assert schedule["totalVoyages"] == 5
+    assert schedule["targetCoACost"] == 21500.0
+    assert all(v["targetStatus"] in {"WITHIN_TARGET", "DEFER_TARGET_EXCEEDED"} for v in schedule["voyages"])
 
     print("\n=== TEST 6: 1,000-Path Monte Carlo Stochastic Simulation ===")
     mc = run_monte_carlo_stress_test(spot_rate=22000, daily_vol=0.0155, cargo_qty_tons=75000, bunker_price=629.0, iterations=1000)
@@ -88,7 +85,7 @@ def test_full_suite():
     assert len(mc['histogram']) == 15
     assert mc['var99CostPerTon'] >= mc['var95CostPerTon'] >= mc['meanLandedCostPerTon']
 
-    print("\n✅ ALL BACKEND PRESCRIPTIVE OPTIMIZERS & SOLVERS TESTED AND PASSED!")
+    print("\nALL BACKEND PRESCRIPTIVE OPTIMIZERS & SOLVERS TESTED AND PASSED!")
 
 if __name__ == "__main__":
     test_full_suite()

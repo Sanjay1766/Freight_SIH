@@ -151,7 +151,7 @@ export default function DataExportCenter({ forecastData, historySeries, selected
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">CSV</span>
               </div>
               <p className="text-[11px] text-slate-500 leading-snug">
-                972 daily records of Baltic indices, VLSFO fuel, coal indices, seaborne volumes, and MTI_India signals.
+                Bundled BDI history with development proxy fields for fuel, coal, volumes, and MTI_India. Review provenance before external use.
               </p>
             </div>
             <button
@@ -203,7 +203,7 @@ export default function DataExportCenter({ forecastData, historySeries, selected
                 <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-200 text-blue-900 font-bold">JSON</span>
               </div>
               <p className="text-[11px] text-slate-600 leading-snug">
-                45-day out-of-sample holdout test predictions, actual spot fixtures, and residual MAPE/RMSE.
+                Chronological next-day holdout predictions and metrics for the currently loaded dataset.
               </p>
             </div>
             <button

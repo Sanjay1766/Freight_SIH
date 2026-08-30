@@ -1,11 +1,11 @@
 /**
  * OceanPulse Enterprise Backend API Client
  * Connects directly to FastAPI Python Backend (http://localhost:8000)
- * Serves 100% genuine GARCH(1,1), LightGBM, PuLP MILP solvers,
+ * Connects the UI to GARCH, CatBoost, PuLP, and simulation endpoints.
  * Virtual Arrival, Triangular Backhauls, Multi-Origin Arbitrage, and Monte Carlo simulations.
  */
 
-export const API_BASE = 'http://localhost:8000';
+export const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
 
 export async function checkBackendHealth() {
   try {
@@ -220,6 +220,7 @@ export async function fetchMonteCarloSimulation(params = {}) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         spotRate: params.spotRate || 22000,
+        dailyVol: params.dailyVol ?? 0.0155,
         cargoQuantityTons: params.cargoQuantityTons || 75000,
         bunkerPrice: params.bunkerPrice || 629.0,
         iterations: params.iterations || 1000

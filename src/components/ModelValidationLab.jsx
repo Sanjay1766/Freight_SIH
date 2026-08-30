@@ -2,7 +2,7 @@ import React from 'react';
 import { CheckCircle2, TrendingUp, BarChart2, HelpCircle, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
-export default function ModelValidationLab({ historySeries, backendMetrics }) {
+export default function ModelValidationLab({ backendMetrics }) {
   if (!backendMetrics || !backendMetrics.ml_regressor) {
     return (
       <div className="card-clean p-10 flex flex-col items-center justify-center text-slate-500 min-h-[400px]">

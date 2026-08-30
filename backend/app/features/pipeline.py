@@ -60,12 +60,17 @@ class FeatureEngineeringPipeline:
         df_feat['is_monsoon_season'] = month.isin([6, 7, 8, 9]).astype(int)
         df_feat['is_prewinter_restocking'] = month.isin([10, 11, 12]).astype(int)
 
-        df_feat = df_feat.bfill().ffill()
+        # Do not backfill time-series features: it leaks future observations into
+        # the beginning of the history. Invalid warm-up rows are removed below.
+        df_feat = df_feat.ffill()
         return df_feat
 
     def build_training_matrix(self, df_feat: pd.DataFrame):
+        # Predict the next day's rate, not the rate from the same observation.
+        # This makes the chronological holdout a genuine one-step-ahead test.
         valid_df = df_feat.iloc[30:].copy().reset_index(drop=True)
-        X = valid_df[FEATURE_COLUMNS]
-        y = valid_df['spot_freight_rate']
+        X = valid_df[FEATURE_COLUMNS].iloc[:-1].reset_index(drop=True)
+        y = valid_df['spot_freight_rate'].shift(-1).iloc[:-1].reset_index(drop=True)
+        valid_df = valid_df.iloc[:-1].reset_index(drop=True)
         return X, y, valid_df
 
