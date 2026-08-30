@@ -544,10 +544,11 @@ export const BACKHAUL_OPPORTUNITIES = [
  * Evaluates the Decision Trigger Rule:
  * Enter_CoA IF (σ̂²_{t+h} > θ_risk AND ŷ_{t+h} ≥ C_CoA) ELSE Spot
  */
-export function evaluateDecisionTrigger(horizonForecast, thetaRisk, targetCoACost) {
-  const predictedRate = horizonForecast.pointForecast;
-  const predictedVolDollars = horizonForecast.volatilityDollars;
-  const volMetricRatio = Number((predictedVolDollars / predictedRate).toFixed(3));
+export function evaluateDecisionTrigger(horizonForecast, thetaRisk = 0.20, targetCoACost = 21500) {
+  const safeForecast = horizonForecast || {};
+  const predictedRate = Number(safeForecast.pointForecast ?? 22000);
+  const predictedVolDollars = Number(safeForecast.volatilityDollars ?? 1200);
+  const volMetricRatio = Number((predictedVolDollars / (predictedRate || 1)).toFixed(3));
 
   const isVolExceeded = volMetricRatio > thetaRisk;
   const isCostExceeded = predictedRate >= targetCoACost;
@@ -571,35 +572,40 @@ export function evaluateDecisionTrigger(horizonForecast, thetaRisk, targetCoACos
  * Solves Dual-Port Constrained Vessel Allocation with IMO CII carbon metrics,
  * lightering logic (Sagar-Sandheads for Haldia), and complete cost breakdown.
  */
-export function solveVesselAllocation(params) {
+export function solveVesselAllocation(params = {}) {
   const {
     originPortKey = 'Indonesia_Samarinda',
     destinationPortKey = 'Dhamra',
     cargoQuantityTons = 75000,
     bunkerPrice = 640,
-    horizonForecast,
-    decisionTrigger,
+    horizonForecast = {},
+    decisionTrigger = {},
     contractType = 'RECOMMENDED'
-  } = params;
+  } = params || {};
 
   const originPort = ORIGIN_PORTS_MATRIX[originPortKey] || ORIGIN_PORTS_MATRIX.Indonesia_Samarinda;
   const destPort = EAST_COAST_PORT_MATRIX[destinationPortKey] || EAST_COAST_PORT_MATRIX.Dhamra;
   const distanceNM = getNauticalDistance(originPortKey, destinationPortKey);
 
-  let activeContract = decisionTrigger.triggerActivated ? 'COA_SHORT_3V' : 'SPOT';
+  const safeForecast = horizonForecast || {};
+  const safePointForecast = Number(safeForecast.pointForecast ?? 22000);
+  const safeDecisionTrigger = decisionTrigger || {};
+  const targetCoACost = Number(safeDecisionTrigger.targetCoACost ?? 21500);
+
+  let activeContract = safeDecisionTrigger.triggerActivated ? 'COA_SHORT_3V' : 'SPOT';
   if (contractType === 'SPOT') activeContract = 'SPOT';
   else if (contractType === 'COA_SHORT_3V') activeContract = 'COA_SHORT_3V';
   else if (contractType === 'COA_MID_6M') activeContract = 'COA_MID_6M';
 
-  let baseCharterRate = horizonForecast.pointForecast;
+  let baseCharterRate = safePointForecast;
   let coaDiscountRate = 1.0;
 
   if (activeContract === 'COA_SHORT_3V') {
     coaDiscountRate = 0.95;
-    baseCharterRate = Math.min(decisionTrigger.targetCoACost, horizonForecast.pointForecast * coaDiscountRate);
+    baseCharterRate = Math.min(targetCoACost, safePointForecast * coaDiscountRate);
   } else if (activeContract === 'COA_MID_6M') {
     coaDiscountRate = 0.90;
-    baseCharterRate = Math.min(decisionTrigger.targetCoACost * 0.95, horizonForecast.pointForecast * coaDiscountRate);
+    baseCharterRate = Math.min(targetCoACost * 0.95, safePointForecast * coaDiscountRate);
   }
 
   const solutions = CANDIDATE_VESSELS.map(vessel => {
@@ -770,12 +776,12 @@ export function solveVesselAllocation(params) {
   const contractComparison = {
     spot: {
       label: 'Single Spot Contract',
-      ratePerDay: horizonForecast.pointForecast,
+      ratePerDay: safePointForecast,
       totalCostDollars: spotLandedCost,
       costPerTon: Number((spotLandedCost / cargoQuantityTons).toFixed(2)),
       volatilityExposure: 'HIGH (100% Spot Volatility)',
       demurrageRiskScore: 'UNHEDGED',
-      recommendationTag: !decisionTrigger.triggerActivated ? 'RECOMMENDED' : 'AVOID_VOLATILITY'
+      recommendationTag: !safeDecisionTrigger.triggerActivated ? 'RECOMMENDED' : 'AVOID_VOLATILITY'
     },
     coaShortTerm3V: {
       label: 'Short-Term 3-Voyage CoA',
@@ -785,17 +791,17 @@ export function solveVesselAllocation(params) {
       volatilityExposure: 'MODERATE (Guaranteed Cap)',
       demurrageRiskScore: 'Capped @ $18k/d',
       savingsVsSpot: Math.max(0, spotLandedCost - coa3VLandedCost),
-      recommendationTag: decisionTrigger.triggerActivated ? 'RECOMMENDED' : 'NEUTRAL'
+      recommendationTag: safeDecisionTrigger.triggerActivated ? 'RECOMMENDED' : 'NEUTRAL'
     },
     coaMidTerm6M: {
       label: 'Medium-Term 6-Month CoA',
-      ratePerDay: Math.round(decisionTrigger.targetCoACost * 0.92),
+      ratePerDay: Math.round(targetCoACost * 0.92),
       totalCostDollars: coa6MLandedCost,
       costPerTon: Number((coa6MLandedCost / cargoQuantityTons).toFixed(2)),
       volatilityExposure: 'MINIMAL (Fixed Rate Lock)',
       demurrageRiskScore: 'Preferred Berth Allocation',
       savingsVsSpot: Math.max(0, spotLandedCost - coa6MLandedCost),
-      recommendationTag: decisionTrigger.volMetricRatio > 0.28 ? 'HIGH_PRIORITY' : 'LONG_TERM_HEDGE'
+      recommendationTag: (safeDecisionTrigger.volMetricRatio || 0) > 0.28 ? 'HIGH_PRIORITY' : 'LONG_TERM_HEDGE'
     }
   };
 
@@ -816,14 +822,14 @@ export function solveVesselAllocation(params) {
  * Multi-Origin Landed Cost Arbitrage Comparator
  * Compares simultaneous procurement landed costs ($/MT & $/GJ) across all 5 global origin hubs.
  */
-export function solveMultiOriginArbitrage(params) {
+export function solveMultiOriginArbitrage(params = {}) {
   const {
     destinationPortKey = 'Dhamra',
     cargoQuantityTons = 75000,
     bunkerPrice = 640,
-    horizonForecast,
-    decisionTrigger
-  } = params;
+    horizonForecast = {},
+    decisionTrigger = {}
+  } = params || {};
 
   const destPort = EAST_COAST_PORT_MATRIX[destinationPortKey] || EAST_COAST_PORT_MATRIX.Dhamra;
 

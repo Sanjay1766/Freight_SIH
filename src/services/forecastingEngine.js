@@ -338,14 +338,17 @@ export function computeEarlyWarningRiskMatrix(params) {
 /**
  * Computes SHAP TreeExplainer feature attributions for a selected forecast horizon
  */
-export function computeShapWaterfall(selectedHorizonForecast, lastPoint) {
+export function computeShapWaterfall(selectedHorizonForecast = {}, lastPoint = {}) {
+  const safeHorizon = selectedHorizonForecast || {};
+  const safeLastPoint = lastPoint || {};
   const baseRate = 18500;
-  const rateDelta = selectedHorizonForecast.pointForecast - baseRate;
+  const pointForecast = Number(safeHorizon.pointForecast ?? 22000);
+  const rateDelta = pointForecast - baseRate;
 
-  const mtiShap = Math.round((lastPoint.mtiIndia - 1.20) * 3100);
-  const bunkerShap = Math.round((lastPoint.bunkerFuel - 600) * 12.8);
-  const coalShap = Math.round((lastPoint.coalIndex - 130) * 38);
-  const dxyShap = Math.round((104.0 - lastPoint.dxy) * 180);
+  const mtiShap = Math.round(((safeLastPoint.mtiIndia ?? 0.319) - 1.20) * 3100);
+  const bunkerShap = Math.round(((safeLastPoint.bunkerFuel ?? safeLastPoint.bunker_fuel ?? 629) - 600) * 12.8);
+  const coalShap = Math.round(((safeLastPoint.coalIndex ?? safeLastPoint.coal_index ?? 139.75) - 130) * 38);
+  const dxyShap = Math.round((104.0 - (safeLastPoint.dxy ?? 99.16)) * 180);
   const horizonSeasonalityShap = Math.round(rateDelta - (mtiShap + bunkerShap + coalShap + dxyShap));
 
   const features = [
@@ -355,7 +358,7 @@ export function computeShapWaterfall(selectedHorizonForecast, lastPoint) {
     { name: 'Newcastle / Global Coal Index', value: coalShap, type: coalShap >= 0 ? 'positive' : 'negative' },
     { name: 'USD Currency Index (DXY)', value: dxyShap, type: dxyShap >= 0 ? 'positive' : 'negative' },
     { name: 'Horizon & Monsoon Seasonality', value: horizonSeasonalityShap, type: horizonSeasonalityShap >= 0 ? 'positive' : 'negative' },
-    { name: 'Final Point Forecast', value: selectedHorizonForecast.pointForecast, type: 'total' }
+    { name: 'Final Point Forecast', value: pointForecast, type: 'total' }
   ];
 
   return features;

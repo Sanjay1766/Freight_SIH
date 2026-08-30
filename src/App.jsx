@@ -264,10 +264,21 @@ export default function App() {
   }, [backendForecast, historySeries, bunkerOffset, scenarioModifiers.regime, selectedOriginKey, selectedPortKey]);
 
   const selectedHorizonForecast = useMemo(() => {
-    return forecast.find(f => f.horizon === selectedHorizon) || forecast[0];
+    return (forecast && forecast.find(f => f.horizon === selectedHorizon)) || (forecast && forecast[0]) || {
+      horizon: selectedHorizon || 15,
+      date: new Date().toISOString().split('T')[0],
+      pointForecast: 22000,
+      upper95: 24000,
+      lower95: 20000,
+      volatilityDollars: 1200,
+      garchWeight: 0.5,
+      mlWeight: 0.5,
+      entryRating: 'NEUTRAL',
+      entryScore: 3
+    };
   }, [forecast, selectedHorizon]);
 
-  const lastHistoryPoint = historySeries[historySeries.length - 1];
+  const lastHistoryPoint = (historySeries && historySeries.length > 0) ? historySeries[historySeries.length - 1] : {};
 
   // 3. Prescriptive Decision Trigger
   const decisionTrigger = useMemo(() => {
@@ -282,7 +293,7 @@ export default function App() {
     if (backendOptimization && backendOptimization.bestSolution) {
       return backendOptimization;
     }
-    const bunkerPrice = (lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset;
+    const bunkerPrice = (lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset;
     return solveVesselAllocation({
       originPortKey: selectedOriginKey,
       destinationPortKey: selectedPortKey,
@@ -522,7 +533,7 @@ export default function App() {
                 <PrescriptiveOptimizerPanel
                   selectedHorizonForecast={selectedHorizonForecast}
                   decisionTrigger={decisionTrigger}
-                  bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
+                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset}
                   cargoQuantity={cargoQuantity}
                   selectedPortKey={selectedPortKey}
                   onPortChange={setSelectedPortKey}
@@ -540,7 +551,7 @@ export default function App() {
                   selectedPortKey={selectedPortKey}
                   onPortChange={setSelectedPortKey}
                   cargoQuantity={cargoQuantity}
-                  bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
+                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset}
                   selectedHorizonForecast={selectedHorizonForecast}
                   decisionTrigger={decisionTrigger}
                   onSelectOrigin={handleSelectArbitrageOrigin}
@@ -563,7 +574,7 @@ export default function App() {
                   bestSolution={optimizationResults.bestSolution}
                   selectedPortKey={selectedPortKey}
                   cargoQuantity={cargoQuantity}
-                  bunkerPrice={(lastHistoryPoint.bunkerFuel || lastHistoryPoint.bunker_fuel || 629.0) + bunkerOffset}
+                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset}
                   backendTurnaround={backendTurnaround}
                 />
 
@@ -709,27 +720,36 @@ export default function App() {
       <FreightQuoteModal
         isOpen={isQuoteModalOpen}
         onClose={() => setIsQuoteModalOpen(false)}
+        horizonForecast={selectedHorizonForecast}
         selectedHorizonForecast={selectedHorizonForecast}
-        lastHistoryPoint={lastHistoryPoint}
+        decisionTrigger={decisionTrigger}
+        bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset}
+        onOpenReport={() => {
+          setIsQuoteModalOpen(false);
+          setIsReportModalOpen(true);
+        }}
       />
 
       <ExecutiveReportModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
-        forecastData={forecast}
-        lastHistoryPoint={lastHistoryPoint}
-        volatilityStats={volatilityStats}
+        bestSolution={optimizationResults?.bestSolution}
         optimizationResults={optimizationResults}
-        riskAnalysis={riskAnalysis}
+        decisionTrigger={decisionTrigger}
+        selectedHorizonForecast={selectedHorizonForecast}
+        selectedPortKey={selectedPortKey}
+        originPortKey={selectedOriginKey}
+        cargoQuantity={cargoQuantity}
+        targetCoACost={targetCoACost}
       />
 
       <CopilotAssistant
         isOpen={isCopilotOpen}
         onClose={() => setIsCopilotOpen(false)}
         selectedHorizonForecast={selectedHorizonForecast}
-        lastHistoryPoint={lastHistoryPoint}
-        optimizationResults={optimizationResults}
-        riskAnalysis={riskAnalysis}
+        decisionTrigger={decisionTrigger}
+        selectedPortKey={selectedPortKey}
+        selectedOriginKey={selectedOriginKey}
       />
 
     </div>

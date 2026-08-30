@@ -5,7 +5,8 @@ import { EAST_COAST_PORT_MATRIX, ORIGIN_PORTS_MATRIX } from '../services/optimiz
 export default function ExecutiveReportModal({
   isOpen,
   onClose,
-  bestSolution,
+  bestSolution: passedBestSolution,
+  optimizationResults,
   decisionTrigger = {},
   selectedHorizonForecast = {},
   selectedPortKey = 'Paradip',
@@ -15,6 +16,7 @@ export default function ExecutiveReportModal({
 }) {
   if (!isOpen) return null;
 
+  const bestSolution = passedBestSolution || optimizationResults?.bestSolution;
   const activePort = EAST_COAST_PORT_MATRIX[selectedPortKey] || EAST_COAST_PORT_MATRIX.Paradip;
   const originPort = ORIGIN_PORTS_MATRIX[originPortKey] || ORIGIN_PORTS_MATRIX.Indonesia_Samarinda;
   const currentDateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -101,7 +103,7 @@ export default function ExecutiveReportModal({
               </div>
               <div>
                 <span className="text-slate-400 block">Forecast Horizon:</span>
-                <strong className="text-[#FF3B00]">{selectedHorizonForecast.horizon || 15} Days Forward</strong>
+                <strong className="text-[#FF3B00]">{selectedHorizonForecast?.horizon || 15} Days Forward</strong>
               </div>
             </div>
           </div>
@@ -123,7 +125,7 @@ export default function ExecutiveReportModal({
             <h2 className="text-lg font-bold text-white font-heading">
               {decisionTrigger.triggerActivated || decisionTrigger.action === 'FIX_COA_NOW'
                 ? `Execute 3-Voyage CoA at Target Cap ≤ $${Number(targetCoACost).toLocaleString()}/day`
-                : `Procure on Prompt Spot Market at ~$${Number(selectedHorizonForecast.pointForecast || 22000).toLocaleString()}/day`}
+                : `Procure on Prompt Spot Market at ~$${Number(selectedHorizonForecast?.pointForecast || 22000).toLocaleString()}/day`}
             </h2>
 
             <p className="text-xs text-slate-300 leading-relaxed font-medium">

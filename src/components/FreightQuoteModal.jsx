@@ -6,6 +6,7 @@ export default function FreightQuoteModal({
   isOpen,
   onClose,
   horizonForecast,
+  selectedHorizonForecast,
   decisionTrigger = {},
   bunkerPrice = 629.0,
   onOpenReport
@@ -18,12 +19,14 @@ export default function FreightQuoteModal({
 
   if (!isOpen) return null;
 
+  const activeHorizonForecast = horizonForecast || selectedHorizonForecast || {};
+
   const result = solveVesselAllocation({
     originPortKey: origin,
     destinationPortKey: targetPort,
     cargoQuantityTons: tonnage,
     bunkerPrice,
-    horizonForecast,
+    horizonForecast: activeHorizonForecast,
     decisionTrigger,
     contractType
   });
