@@ -63,116 +63,118 @@ export default function PrescriptiveOptimizerPanel({
   const isCoARecommended = decisionTrigger?.triggerActivated || decisionTrigger?.action === 'FIX_COA_NOW';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       
       {/* 1. Decision Trigger Status Banner */}
-      <div className={`card-clean p-6 border-2 transition-all ${
+      <div className={`terminal-card p-5 border ${
         isCoARecommended
-          ? 'border-amber-400 bg-amber-50/50 shadow-sm'
-          : 'border-emerald-400 bg-emerald-50/50 shadow-sm'
+          ? 'border-[#FDE68A] bg-[#FFFDF5]'
+          : 'border-[#BCEAE4] bg-[#F4FCFA]'
       }`}>
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           
-          <div className="flex items-center gap-4">
-            <div className={`p-3.5 rounded-2xl ${
+          <div className="flex items-center gap-3.5">
+            <div className={`p-3 rounded-xl ${
               isCoARecommended
-                ? 'bg-amber-500 text-white'
-                : 'bg-emerald-500 text-white'
+                ? 'bg-[#FEF3C7] text-[#B45309] border border-[#FDE68A]'
+                : 'bg-[#E6F7F5] text-[#0D9488] border border-[#BCEAE4]'
             }`}>
-              {isCoARecommended ? <ShieldCheck className="w-8 h-8" /> : <Compass className="w-8 h-8" />}
+              {isCoARecommended ? <ShieldCheck className="w-6 h-6" /> : <Compass className="w-6 h-6" />}
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs uppercase tracking-wider font-bold text-slate-500">Prescriptive Decision Trigger Rule</span>
-                <span className="text-slate-300">•</span>
-                <span className="font-mono text-xs text-[#FF3B00] font-bold">
-                  Enter_CoA IF (σ̂²_{selectedHorizonForecast.horizon || 15}D &gt; θ_risk AND ŷ_{selectedHorizonForecast.horizon || 15}D ≥ C_CoA)
+                <span className="text-[11px] uppercase font-bold text-[#627D98] tracking-wider">Strategic Procurement Trigger</span>
+                <span className="text-[#CBDCE8]">•</span>
+                <span className="text-xs text-[#077DB3] font-semibold">
+                  Forecast Window: {selectedHorizonForecast.horizon || 15} Days Forward
                 </span>
               </div>
 
-              <h2 className="text-xl font-extrabold text-slate-900 mt-1 flex items-center gap-2 font-heading">
+              <h2 className="text-lg font-bold font-heading text-[#0F2942] mt-1 flex items-center gap-2">
                 Recommended Strategy: 
-                <span className={isCoARecommended ? 'text-amber-700 font-black' : 'text-emerald-700 font-black'}>
-                  {isCoARecommended ? 'LOCK IN 3-VOYAGE COA (HEDGE RISK)' : 'OPERATE ON PROMPT SPOT MARKET'}
+                <span className={isCoARecommended ? 'text-[#B45309] font-extrabold' : 'text-[#0D9488] font-extrabold'}>
+                  {isCoARecommended ? 'LOCK IN 3-VOYAGE TERM CONTRACT' : 'OPERATE ON PROMPT SPOT MARKET'}
                 </span>
               </h2>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 text-xs font-mono shadow-sm">
-            <div className="text-center px-2">
-              <div className="text-[10px] text-slate-400 font-sans font-bold">Vol Ratio (σ̂ / ŷ)</div>
-              <div className={`font-bold ${decisionTrigger?.volMetricRatio > decisionTrigger?.thetaRisk ? 'text-amber-600' : 'text-slate-700'}`}>
+          <div className="flex items-center gap-3 bg-white px-3.5 py-2 rounded-xl border border-[#DCE8F0] text-xs font-mono shadow-xs">
+            <div className="text-center px-1">
+              <div className="text-[10px] text-[#627D98] font-sans font-bold uppercase">Rate Buffer</div>
+              <div className={`font-bold tabular-nums ${decisionTrigger?.volMetricRatio > decisionTrigger?.thetaRisk ? 'text-[#B45309]' : 'text-[#334E68]'}`}>
                 {decisionTrigger?.volMetricRatio || 0.12} {decisionTrigger?.volMetricRatio > decisionTrigger?.thetaRisk ? '>' : '≤'} {decisionTrigger?.thetaRisk || 0.20}
               </div>
             </div>
-            <div className="h-6 w-px bg-slate-200" />
-            <div className="text-center px-2">
-              <div className="text-[10px] text-slate-400 font-sans font-bold">Rate vs CoA Target</div>
-              <div className={`font-bold ${decisionTrigger?.predictedRate >= decisionTrigger?.targetCoACost ? 'text-amber-600' : 'text-slate-700'}`}>
+            <div className="h-6 w-px bg-[#E2EDF5]" />
+            <div className="text-center px-1">
+              <div className="text-[10px] text-[#627D98] font-sans font-bold uppercase">Expected vs Target</div>
+              <div className={`font-bold tabular-nums ${decisionTrigger?.predictedRate >= decisionTrigger?.targetCoACost ? 'text-[#B45309]' : 'text-[#334E68]'}`}>
                 ${Number(decisionTrigger?.predictedRate || decisionTrigger?.expectedDailyRate || 22000).toLocaleString()} {decisionTrigger?.predictedRate >= decisionTrigger?.targetCoACost ? '≥' : '<'} ${Number(decisionTrigger?.targetCoACost || 21500).toLocaleString()}
               </div>
             </div>
           </div>
         </div>
 
-        <p className="text-xs text-slate-700 mt-3 pt-3 border-t border-slate-200 leading-relaxed font-medium">
-          {decisionTrigger?.reasoning || decisionTrigger?.recommendationText || 'Prescriptive evaluation recommends optimizing fixture timing based on forward volatility bounds.'}
+        <p className="text-xs text-[#334E68] mt-3 pt-3 border-t border-[#E8F0F6] leading-relaxed font-medium">
+          {decisionTrigger?.reasoning || decisionTrigger?.recommendationText || 'Optimizing fixture timing based on current market trends and expected port waiting times.'}
         </p>
       </div>
 
       {/* 2. Executive Recommendation Card with CII Rating */}
-      <div className="card-clean p-6 bg-slate-900 text-white border-slate-900 shadow-xl relative">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2 text-[#FF3B00] font-bold text-xs uppercase tracking-wider">
-            <Anchor className="w-4 h-4" /> Objective B • Vessel Type & Route Allocation Solution
+      <div className="terminal-card p-5 border-[#BED9EB] bg-gradient-to-r from-[#EBF4FA] via-[#F4F9FC] to-white">
+        <div className="flex items-center justify-between mb-2.5">
+          <div className="flex items-center gap-2 text-[#077DB3] font-bold text-xs uppercase tracking-wider">
+            <Anchor className="w-4 h-4" /> Recommended Vessel Type & Route Solution
           </div>
           <div className="flex items-center gap-2">
             {bestSolution && (
-              <span className="badge-navy bg-emerald-900/80 text-emerald-300 border-emerald-700 font-mono text-[10px] flex items-center gap-1">
-                <Leaf className="w-3 h-3 text-emerald-400" /> IMO CII Grade {bestSolution?.ciiGrade || bestSolution?.carbonMetrics?.ciiGrade || 'B'} ({bestSolution?.carbonMetrics?.co2GramsPerTonNM || 4.2} g/t-NM)
+              <span className="status-pill status-pill-emerald text-xs">
+                <Leaf className="w-3.5 h-3.5" /> Energy Rating: Grade {bestSolution?.ciiGrade || 'B'} ({bestSolution?.carbonMetrics?.co2GramsPerTonNM || 4.2} g/t-NM)
               </span>
             )}
-            <span className="badge-navy bg-slate-800 text-slate-300 border-slate-700 font-mono text-[10px]">PuLP MILP Solver</span>
+            <span className="status-pill status-pill-ocean text-xs font-semibold">
+              Optimal Match
+            </span>
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-white mb-2 font-heading">{recommendationCard?.headline || 'Optimal Vessel Allocation'}</h3>
-        <p className="text-sm text-slate-300 leading-relaxed mb-4 font-medium">
-          {recommendationCard?.summary || 'Optimized vessel allocation selected for maximum fuel efficiency and landed cost minimization.'}
+        <h3 className="text-base font-bold font-heading text-[#0F2942] mb-1.5">{recommendationCard?.headline || 'Optimal Vessel Allocation'}</h3>
+        <p className="text-xs text-[#334E68] leading-relaxed mb-3 font-medium">
+          {recommendationCard?.summary || 'Optimized allocation selected for lowest landed cost per ton while satisfying draft and length constraints.'}
         </p>
         
-        <div className="flex flex-wrap items-center justify-between text-xs pt-3 border-t border-slate-800 font-mono text-slate-300 gap-2">
-          <span>Route: <strong className="text-white">{originPort?.name || selectedOriginKey} → {destPort?.name || selectedPortKey}</strong></span>
-          <span>Contract Mode: <strong className="text-[#FF3B00]">{recommendationCard?.contractStructure || 'Prompt Spot Fixture'}</strong></span>
-          <span>Savings vs Volatile Spot: <strong className="text-emerald-400 font-bold">{recommendationCard?.savingsVsSpot || '~$180,000'}</strong></span>
+        <div className="flex flex-wrap items-center justify-between text-xs pt-2.5 border-t border-[#DCE8F0] text-[#334E68] gap-2">
+          <span>Route: <strong className="text-[#0F2942]">{(originPort?.name || selectedOriginKey).split('(')[0]} ➔ {(destPort?.name || selectedPortKey).split('(')[0]}</strong></span>
+          <span>Contract Mode: <strong className="text-[#077DB3]">{recommendationCard?.contractStructure || 'Prompt Spot Fixture'}</strong></span>
+          <span>Estimated Savings: <strong className="text-[#0D9488] font-bold tabular-nums font-mono">{recommendationCard?.savingsVsSpot || '~$180,000 / voyage'}</strong></span>
         </div>
       </div>
 
       {/* 3. Port Matrix & Vessel Allocation Table */}
-      <div className="card-clean p-6">
+      <div className="terminal-card p-5 bg-white">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <div>
-            <h3 className="text-base font-extrabold text-slate-900 font-heading flex items-center gap-2">
-              <Anchor className="w-4 h-4 text-[#FF3B00]" />
-              Dual-Port Constraint Validation & Landed Cost Solver
+            <h3 className="text-sm font-bold font-heading text-[#0F2942] flex items-center gap-2">
+              <Anchor className="w-4 h-4 text-[#077DB3]" />
+              Port Draft Compatibility & Fleet Economics Matrix
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Validates draft, LOA, handling rates, and IMO Carbon Intensity Indicator (CII) at loading and discharge ports
+            <p className="text-xs text-[#627D98] mt-0.5 font-medium">
+              Validates draft, berth length, lightering at Sagar-Sandheads, and landed costs per ton.
             </p>
           </div>
 
           {/* Quick Port Switcher */}
-          <div className="flex flex-wrap gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <div className="flex flex-wrap gap-1 bg-[#F0F6FA] p-1 rounded-lg border border-[#DCE8F0]">
             {Object.keys(EAST_COAST_PORT_MATRIX).map(portKey => (
               <button
                 key={portKey}
                 onClick={() => onPortChange && onPortChange(portKey)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
                   selectedPortKey === portKey
-                    ? 'bg-[#FF3B00] text-white shadow-md shadow-orange-500/20'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white text-[#077DB3] shadow-xs border border-[#BED9EB]'
+                    : 'text-[#627D98] hover:text-[#0F2942]'
                 }`}
               >
                 {portKey}
@@ -182,44 +184,44 @@ export default function PrescriptiveOptimizerPanel({
         </div>
 
         {/* Port Technical Parameters Comparison */}
-        <div className="mb-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
+        <div className="mb-4 p-3.5 rounded-xl bg-[#F5F9FC] border border-[#E2EDF5] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
           <div>
-            <span className="text-slate-400 block font-sans font-medium">Origin Loading Port:</span>
-            <span className="font-bold text-slate-900">{(originPort?.name || selectedOriginKey).split('(')[0]}</span>
-            <span className="text-[10px] text-slate-500 block">Max Draft: {originPort?.maxDraft || 14.5}m • {((originPort?.dailyLoadingRate || 35000) / 1000).toFixed(0)}k MT/d</span>
+            <span className="text-[#627D98] block text-[10px] font-bold uppercase">Loading Port</span>
+            <span className="font-bold text-[#0F2942]">{(originPort?.name || selectedOriginKey).split('(')[0]}</span>
+            <span className="text-[11px] text-[#627D98] block mt-0.5">Draft: {originPort?.maxDraft || 14.5}m • {((originPort?.dailyLoadingRate || 35000) / 1000).toFixed(0)}k MT/d</span>
           </div>
           <div>
-            <span className="text-slate-400 block font-sans font-medium">Destination Discharge:</span>
-            <span className="font-bold text-slate-900">{(destPort?.name || selectedPortKey).split('(')[0]}</span>
-            <span className="text-[10px] text-slate-500 block">Max Draft: {destPort?.maxDraft || 14.5}m • {((destPort?.dailyDischargeRate || 50000) / 1000).toFixed(0)}k MT/d</span>
+            <span className="text-[#627D98] block text-[10px] font-bold uppercase">Discharge Port</span>
+            <span className="font-bold text-[#077DB3]">{(destPort?.name || selectedPortKey).split('(')[0]}</span>
+            <span className="text-[11px] text-[#627D98] block mt-0.5">Draft: {destPort?.maxDraft || 14.5}m • {((destPort?.dailyDischargeRate || 50000) / 1000).toFixed(0)}k MT/d</span>
           </div>
           <div>
-            <span className="text-slate-400 block font-sans font-medium">Cargo Parcel & Tariffs:</span>
-            <span className="font-bold text-slate-900">{Number(cargoQuantity || 75000).toLocaleString()} MT</span>
-            <span className="text-[10px] text-slate-500 block">Tariff: ${destPort?.portTariffPerTon || 3.9}/MT</span>
+            <span className="text-[#627D98] block text-[10px] font-bold uppercase">Cargo Parcel & Tariff</span>
+            <span className="font-bold text-[#0F2942] font-mono tabular-nums">{Number(cargoQuantity || 75000).toLocaleString()} MT</span>
+            <span className="text-[11px] text-[#627D98] block mt-0.5">Tariff: ${destPort?.portTariffPerTon || 3.9}/MT</span>
           </div>
           <div>
-            <span className="text-slate-400 block font-sans font-medium">Waiting & Demurrage:</span>
-            <span className="font-bold text-amber-600">{destPort?.avgWaitingDays || 2.4} days wait</span>
-            <span className="text-[10px] text-slate-500 block">${Number(destPort?.demurrageRatePerDay || 22000).toLocaleString()}/day rate</span>
+            <span className="text-[#627D98] block text-[10px] font-bold uppercase">Expected Waiting</span>
+            <span className="font-bold text-[#B45309] font-mono tabular-nums">{destPort?.avgWaitingDays || 2.4} Days Wait</span>
+            <span className="text-[11px] text-[#627D98] block mt-0.5">${Number(destPort?.demurrageRatePerDay || 22000).toLocaleString()}/day demurrage</span>
           </div>
         </div>
 
         {/* Vessel Matrix Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
+          <table className="terminal-table">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
-                <th className="py-2.5 px-3">Vessel & Class</th>
-                <th className="py-2.5 px-3">Draft / LOA / Beam</th>
-                <th className="py-2.5 px-3">Dual-Port Validation</th>
-                <th className="py-2.5 px-3">IMO CII Rating</th>
-                <th className="py-2.5 px-3 text-right">Landed Cost / MT</th>
-                <th className="py-2.5 px-3 text-right">Total Voyage Cost</th>
-                <th className="py-2.5 px-3 text-center">Feasibility</th>
+              <tr>
+                <th>Vessel Class & Name</th>
+                <th>Draft / Dimensions</th>
+                <th>Port Compatibility</th>
+                <th>Energy Rating</th>
+                <th className="text-right">Landed Cost / MT</th>
+                <th className="text-right">Total Voyage Cost</th>
+                <th className="text-center">Feasibility</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {allSolutions.map((sol) => {
                 const isOptimal = bestSolution && (bestSolution.vessel?.id === sol.vessel?.id || bestSolution.vessel?.name === sol.vessel?.name);
                 const isFeasible = sol.isFeasible !== false;
@@ -235,76 +237,76 @@ export default function PrescriptiveOptimizerPanel({
                 return (
                   <tr
                     key={sol.vessel?.id || sol.vessel?.name}
-                    className={`transition-colors ${
-                      isOptimal
-                        ? 'bg-orange-50/70 border-l-4 border-l-[#FF3B00] font-medium'
-                        : isFeasible
-                        ? 'hover:bg-slate-50'
-                        : 'opacity-50 bg-slate-50/50'
-                    }`}
+                    className={isOptimal ? 'bg-[#EBF4FA] font-semibold' : !isFeasible ? 'opacity-40' : ''}
                   >
-                    <td className="py-3 px-3">
-                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <td>
+                      <div className="font-bold text-[#0F2942] flex items-center gap-1.5">
                         {sol.vessel?.name}
-                        {isOptimal && <span className="px-1.5 py-0.5 rounded bg-[#FF3B00] text-white text-[9px] uppercase font-extrabold">OPTIMAL</span>}
+                        {isOptimal && (
+                          <span className="status-pill status-pill-ocean text-[10px] py-0 px-1.5">
+                            RECOMMENDED
+                          </span>
+                        )}
                       </div>
-                      <div className="text-[11px] text-slate-500">{sol.vessel?.vesselClass} • {Number(sol.vessel?.dwt || 75000).toLocaleString()} DWT</div>
+                      <div className="text-xs text-[#627D98]">
+                        {sol.vessel?.vesselClass} • {Number(sol.vessel?.dwt || 75000).toLocaleString()} DWT
+                      </div>
                     </td>
 
-                    <td className="py-3 px-3 font-mono text-slate-700">
-                      <div>Draft: {sol.vessel?.draft}m (Dest Max: {destPort?.maxDraft || 14.5}m)</div>
-                      <div className="text-slate-400 text-[11px]">LOA: {sol.vessel?.loa}m • Beam: {sol.vessel?.beam}m</div>
+                    <td className="text-xs text-[#334E68]">
+                      <div>Draft: {sol.vessel?.draft}m (Port Max: {destPort?.maxDraft || 14.5}m)</div>
+                      <div className="text-[#829AB1] text-[11px]">LOA: {sol.vessel?.loa}m • Beam: {sol.vessel?.beam}m</div>
                     </td>
 
-                    <td className="py-3 px-3">
-                      <div className="flex flex-wrap gap-1.5 text-[10px]">
-                        <span className={`px-1.5 py-0.5 rounded font-bold ${
+                    <td>
+                      <div className="flex flex-wrap gap-1 text-[11px]">
+                        <span className={`status-pill ${
                           isLightered
-                            ? 'bg-amber-100 text-amber-800'
+                            ? 'status-pill-amber'
                             : draftPass
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-rose-100 text-rose-800'
+                            ? 'status-pill-emerald'
+                            : 'status-pill-coral'
                         }`}>
                           {isLightered ? 'Sandheads Lightered' : `Draft ${draftPass ? '✓' : '✗'}`}
                         </span>
-                        <span className={`px-1.5 py-0.5 rounded font-bold ${loaPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                        <span className={`status-pill ${loaPass ? 'status-pill-emerald' : 'status-pill-coral'}`}>
                           LOA {loaPass ? '✓' : '✗'}
                         </span>
-                        <span className={`px-1.5 py-0.5 rounded font-bold ${classPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                        <span className={`status-pill ${classPass ? 'status-pill-emerald' : 'status-pill-coral'}`}>
                           Class {classPass ? '✓' : '✗'}
                         </span>
                       </div>
                     </td>
 
-                    <td className="py-3 px-3">
+                    <td>
                       <div className="flex items-center gap-1.5">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          ciiGrade === 'A' ? 'bg-emerald-100 text-emerald-800' :
-                          ciiGrade === 'B' ? 'bg-blue-100 text-blue-800' :
-                          ciiGrade === 'C' ? 'bg-amber-100 text-amber-800' :
-                          'bg-rose-100 text-rose-800'
+                        <span className={`status-pill ${
+                          ciiGrade === 'A' ? 'status-pill-emerald' :
+                          ciiGrade === 'B' ? 'status-pill-ocean' :
+                          ciiGrade === 'C' ? 'status-pill-amber' :
+                          'status-pill-coral'
                         }`}>
                           Grade {ciiGrade}
                         </span>
-                        <span className="font-mono text-[10px] text-slate-500">
+                        <span className="text-[11px] text-[#627D98]">
                           {co2Grams} g/t-NM
                         </span>
                       </div>
                     </td>
 
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">
+                    <td className="text-right font-mono font-bold text-[#0F2942] tabular-nums text-xs">
                       {isFeasible ? `$${Number(landedCost).toFixed(2)}/MT` : 'N/A'}
                     </td>
 
-                    <td className="py-3 px-3 text-right font-mono font-bold text-[#FF3B00]">
+                    <td className="text-right font-mono font-bold text-[#077DB3] tabular-nums text-xs">
                       {isFeasible ? `$${(Number(totalCost) / 1000000).toFixed(2)}M` : 'Infeasible'}
                     </td>
 
-                    <td className="py-3 px-3 text-center">
+                    <td className="text-center">
                       {isFeasible ? (
-                        <CheckCircle2 className={`w-5 h-5 inline ${isOptimal ? 'text-[#FF3B00]' : 'text-emerald-600'}`} />
+                        <CheckCircle2 className={`w-4 h-4 inline ${isOptimal ? 'text-[#077DB3]' : 'text-[#0D9488]'}`} />
                       ) : (
-                        <XCircle className="w-5 h-5 text-rose-500 inline" title="Port Constraint Violation" />
+                        <XCircle className="w-4 h-4 text-rose-500 inline" title="Port Constraint Violation" />
                       )}
                     </td>
                   </tr>

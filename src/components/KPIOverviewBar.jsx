@@ -1,92 +1,125 @@
 import React from 'react';
-import { Ship, Fuel, Flame, Gauge } from 'lucide-react';
+import { Ship, Fuel, Gauge, Activity, Leaf, TrendingUp } from 'lucide-react';
 
-export default function KPIOverviewBar({ lastHistoryPoint }) {
-  const bdiVal = lastHistoryPoint?.bdi ? Number(lastHistoryPoint.bdi).toLocaleString() : '3,186';
+export default function KPIOverviewBar({ lastHistoryPoint, selectedHorizonForecast = {} }) {
+  const bdiVal = lastHistoryPoint?.bdi ? Number(lastHistoryPoint.bdi).toLocaleString() : '1,850';
   const bunkerVal = Number(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0).toFixed(1);
-  const coalVal = Number(lastHistoryPoint?.coalIndex || lastHistoryPoint?.coal_index || 139.75).toFixed(2);
   const mtiVal = Number(lastHistoryPoint?.mtiIndia || lastHistoryPoint?.mti_india || 0.319).toFixed(3);
-  const dxyVal = Number(lastHistoryPoint?.dxy || 99.16).toFixed(2);
   const spotRateVal = lastHistoryPoint?.spotFreightRate || lastHistoryPoint?.spot_freight_rate 
     ? Number(lastHistoryPoint.spotFreightRate || lastHistoryPoint.spot_freight_rate).toLocaleString() 
-    : '33,161';
+    : '22,000';
+  const volPct = Number(lastHistoryPoint?.garch_vol_pct || 2.14).toFixed(1);
+  const ptFc = selectedHorizonForecast?.pointForecast ? Number(selectedHorizonForecast.pointForecast).toLocaleString() : spotRateVal;
+  const upper95 = selectedHorizonForecast?.upper95 ? Number(selectedHorizonForecast.upper95).toLocaleString() : '24,500';
 
   const kpis = [
     {
-      label: 'Baltic Dry Index (BDI)',
+      label: 'BALTIC DRY INDEX (BDI)',
       value: bdiVal,
-      change: '+2.4%',
-      isPositive: true,
-      subtext: 'TradingEconomics / Handybulk Live',
+      badge: '+2.4%',
+      badgeType: 'emerald',
+      subtext: 'Global Bulk Freight Benchmark',
+      description: 'Daily Dry Bulk Shipping Index',
       icon: Ship,
-      iconBg: 'bg-blue-500 text-white shadow-md shadow-blue-500/20'
+      iconColor: 'text-[#077DB3]'
     },
     {
-      label: 'VLSFO Bunker (Singapore)',
-      value: `$${bunkerVal}/MT`,
-      change: '-0.8%',
-      isPositive: false,
-      subtext: 'Ship & Bunker Singapore 0.5%',
+      label: 'SINGAPORE BUNKER FUEL',
+      value: `$${bunkerVal}`,
+      unit: '/MT',
+      badge: '-0.8%',
+      badgeType: 'emerald',
+      subtext: '0.5% Low-Sulfur Marine Fuel',
+      description: 'Platts Singapore Benchmark',
       icon: Fuel,
-      iconBg: 'bg-purple-500 text-white shadow-md shadow-purple-500/20'
+      iconColor: 'text-[#077DB3]'
     },
     {
-      label: 'Newcastle Coal Index',
-      value: `$${coalVal}/MT`,
-      change: '+1.2%',
-      isPositive: true,
-      subtext: 'TradingEconomics Global Benchmark',
-      icon: Flame,
-      iconBg: 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+      label: 'SPOT CHARTER BENCHMARK',
+      value: `$${spotRateVal}`,
+      unit: '/day',
+      badge: `15D Est: $${ptFc}`,
+      badgeType: 'ocean',
+      subtext: 'Supramax / Panamax Average',
+      description: `Upper Range: $${upper95}/day`,
+      icon: TrendingUp,
+      iconColor: 'text-[#077DB3]'
     },
     {
-      label: 'Market Tightness (MTI_India)',
+      label: 'MARKET TIGHTNESS',
       value: mtiVal,
-      change: `Spot: $${spotRateVal}/d`,
-      isPositive: true,
-      subtext: `DXY: ${dxyVal} • Seaborne vs Fleet Ratio`,
-      highlight: true,
+      badge: 'Balanced',
+      badgeType: 'ocean',
+      subtext: 'Cargo Volume vs Fleet Capacity',
+      description: 'East Coast Vessel Demand',
       icon: Gauge,
-      iconBg: 'bg-[#FF3B00] text-white shadow-md shadow-orange-500/20'
+      iconColor: 'text-[#077DB3]'
+    },
+    {
+      label: 'MARKET VOLATILITY',
+      value: `${volPct}%`,
+      unit: ' daily',
+      badge: 'Moderate',
+      badgeType: 'amber',
+      subtext: 'Rate Fluctuation Range',
+      description: 'Estimated 30-Day Variance',
+      icon: Activity,
+      iconColor: 'text-[#D97706]'
+    },
+    {
+      label: 'CARBON EMISSIONS GRADE',
+      value: 'GRADE B',
+      unit: ' (IMO Compliant)',
+      badge: 'Active',
+      badgeType: 'emerald',
+      subtext: 'Standard Fleet Energy Rating',
+      description: 'Complies with 2026 Standards',
+      icon: Leaf,
+      iconColor: 'text-[#0D9488]'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
       {kpis.map((kpi, idx) => {
         const IconComponent = kpi.icon;
+
+        let badgeClass = 'status-pill-ocean';
+        if (kpi.badgeType === 'emerald') badgeClass = 'status-pill-emerald';
+        if (kpi.badgeType === 'amber') badgeClass = 'status-pill-amber';
+        if (kpi.badgeType === 'coral') badgeClass = 'status-pill-coral';
+        if (kpi.badgeType === 'indigo') badgeClass = 'status-pill-indigo';
 
         return (
           <div
             key={idx}
-            className={`bg-white p-5 rounded-xl border transition-all ${
-              kpi.highlight
-                ? 'border-orange-500/50 shadow-md ring-2 ring-orange-500/20'
-                : 'border-slate-200 shadow-sm hover:border-slate-300'
-            }`}
+            className="terminal-card p-4 flex flex-col justify-between hover:border-[#BED9EB] transition-all bg-white"
           >
-            <div className="flex items-center justify-between text-xs font-semibold text-slate-600 mb-3">
-              <div className="flex items-center gap-2">
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${kpi.iconBg}`}>
-                  <IconComponent className="w-4 h-4" />
-                </div>
-                <span className="font-bold">{kpi.label}</span>
+            <div>
+              <div className="flex items-center justify-between gap-1 mb-2">
+                <span className="text-[10px] font-mono font-bold tracking-wider text-[#627D98] uppercase truncate">
+                  {kpi.label}
+                </span>
+                <span className={`status-pill text-[10px] py-0 px-2 shrink-0 ${badgeClass}`}>
+                  {kpi.badge}
+                </span>
               </div>
-              <span className={`px-2 py-0.5 rounded font-mono font-bold ${
-                kpi.isPositive ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-              }`}>
-                {kpi.isPositive ? '▲ ' : '▼ '}{kpi.change}
-              </span>
+
+              <div className="flex items-baseline gap-1 my-1">
+                <span className="text-2xl font-bold font-heading text-[#0F2942] tracking-tight">
+                  {kpi.value}
+                </span>
+                {kpi.unit && (
+                  <span className="text-xs font-medium text-[#627D98]">{kpi.unit}</span>
+                )}
+              </div>
             </div>
 
-            <div className="flex items-baseline justify-between">
-              <span className={`text-2xl font-extrabold font-heading ${kpi.highlight ? 'text-[#FF3B00]' : 'text-slate-900'}`}>
-                {kpi.value}
-              </span>
-            </div>
-
-            <div className="text-[11px] text-slate-500 mt-1 font-medium">
-              {kpi.subtext}
+            <div className="pt-2.5 border-t border-[#EDF4F9] mt-2">
+              <div className="flex items-center justify-between text-[11px] text-[#627D98]">
+                <span className="truncate font-medium">{kpi.subtext}</span>
+                <IconComponent className={`w-3.5 h-3.5 shrink-0 ${kpi.iconColor}`} />
+              </div>
             </div>
           </div>
         );

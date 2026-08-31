@@ -17,70 +17,68 @@ export default function WhatIfControls({
   onResetControls
 }) {
   const presets = [
-    { key: 'normal', label: 'Normal Market', desc: 'Baseline global trade & weather' },
-    { key: 'monsoon', label: 'Monsoon Bottleneck', desc: '+25% Indian port delays & swell' },
-    { key: 'bunker', label: 'Bunker Fuel Surge', desc: '+50% Singapore VLSFO price shock' },
-    { key: 'disruption', label: 'Supply Disruption', desc: '+40% Volume surge & chokepoint tightness' }
+    { key: 'normal', label: 'Normal Baseline', desc: 'Standard market conditions' },
+    { key: 'monsoon', label: 'Monsoon Swell', desc: '+25% Indian port delays & sea swell' },
+    { key: 'bunker', label: 'Bunker Fuel Surge', desc: '+50% Singapore marine fuel shift' },
+    { key: 'disruption', label: 'Supply Bottleneck', desc: '+40% Volume surge & vessel queue tightness' }
   ];
 
   return (
-    <div className="card-clean p-6">
+    <div className="terminal-card p-5 border-[#D6E4EE] bg-white">
       
       {/* Top Header & Presets */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-slate-200">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-4 pb-3.5 border-b border-[#EDF4F9]">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#FF3B00] text-white flex items-center justify-center shadow-md shadow-orange-500/20">
-              <Sliders className="w-4 h-4 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#E1EFF8] text-[#077DB3] flex items-center justify-center border border-[#BED9EB]">
+              <Sliders className="w-4 h-4" />
             </div>
-            <h2 className="text-base font-extrabold text-slate-900 font-heading">
-              Interactive Scenario & What-If Simulation Studio
+            <h2 className="text-sm font-bold font-heading text-[#0F2942]">
+              Market Scenario & What-If Simulation Studio
             </h2>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Test custom freight horizons (up to 90 days), risk thresholds, fuel shocks, and origin trade lanes
+          <p className="text-xs text-[#627D98] mt-0.5 font-medium">
+            Simulate custom planning horizons (up to 90 days), risk buffers, fuel adjustments, and parcel sizes.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
           {presets.map(p => (
             <button
               key={p.key}
               onClick={() => onPresetChange(p.key)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
                 selectedPreset === p.key
-                  ? 'bg-slate-900 text-white shadow-md'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                  ? 'bg-[#077DB3] text-white shadow-xs'
+                  : 'bg-[#F0F6FA] text-[#334E68] hover:bg-[#E1EFF8] hover:text-[#077DB3] border border-[#DCE8F0]'
               }`}
               title={p.desc}
             >
-              <Zap className={`w-3.5 h-3.5 ${selectedPreset === p.key ? 'text-[#FF3B00]' : 'text-amber-500'}`} />
+              <Zap className={`w-3.5 h-3.5 ${selectedPreset === p.key ? 'text-white' : 'text-[#D97706]'}`} />
               {p.label}
             </button>
           ))}
 
           <button
             onClick={onResetControls}
-            className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-[#FF3B00] transition-colors ml-2 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200"
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#627D98] hover:text-[#077DB3] transition-colors ml-1 bg-[#F0F6FA] px-3 py-1.5 rounded-lg border border-[#DCE8F0]"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#FF3B00]" /> Reset
+            <RefreshCw className="w-3.5 h-3.5 text-[#077DB3]" /> Reset
           </button>
         </div>
       </div>
 
-      {/* Sliders Grid with High Contrast Icon Containers */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs">
+      {/* Sliders Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
         
         {/* 1. Forecast Horizon (1-90 Days) */}
-        <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <div className="flex justify-between items-center text-slate-800 font-bold">
-            <span className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-md bg-orange-100 text-[#FF3B00] flex items-center justify-center">
-                <Calendar className="w-3.5 h-3.5" />
-              </span>
-              <span>Horizon:</span>
+        <div className="space-y-1.5 bg-[#F5F9FC] p-3 rounded-xl border border-[#E2EDF5]">
+          <div className="flex justify-between items-center text-[#334E68] font-semibold">
+            <span className="flex items-center gap-1.5 text-[#627D98] text-[11px] uppercase font-bold">
+              <Calendar className="w-3.5 h-3.5 text-[#077DB3]" />
+              Horizon (Days)
             </span>
-            <span className="font-mono text-[#FF3B00] font-black">{selectedHorizon} Days</span>
+            <span className="text-[#077DB3] font-bold font-mono tabular-nums">+{selectedHorizon}D</span>
           </div>
           <input
             type="range"
@@ -88,75 +86,76 @@ export default function WhatIfControls({
             max="90"
             step="1"
             value={selectedHorizon}
-            onChange={e => onHorizonChange(Number(e.target.value))}
+            onChange={(e) => onHorizonChange(Number(e.target.value))}
+            className="w-full h-1.5 bg-[#D6E4EE] rounded-lg appearance-none cursor-pointer accent-[#077DB3]"
           />
-          <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-            <span>1D (Spot)</span>
-            <span>45D (Term)</span>
-            <span>90D (Forward)</span>
+          <div className="flex justify-between text-[10px] text-[#829AB1]">
+            <span>Prompt (1D)</span>
+            <span>Mid (45D)</span>
+            <span>Quarter (90D)</span>
           </div>
         </div>
 
-        {/* 2. Risk Threshold θ_risk */}
-        <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <div className="flex justify-between items-center text-slate-800 font-bold">
-            <span className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center">
-                <Shield className="w-3.5 h-3.5" />
-              </span>
-              <span>Risk θ_risk:</span>
+        {/* 2. Risk Buffer */}
+        <div className="space-y-1.5 bg-[#F5F9FC] p-3 rounded-xl border border-[#E2EDF5]">
+          <div className="flex justify-between items-center text-[#334E68] font-semibold">
+            <span className="flex items-center gap-1.5 text-[#627D98] text-[11px] uppercase font-bold">
+              <Shield className="w-3.5 h-3.5 text-[#D97706]" />
+              Risk Buffer
             </span>
-            <span className="font-mono text-amber-700 font-black">{thetaRisk.toFixed(2)}</span>
+            <span className="text-[#D97706] font-bold font-mono tabular-nums">{(thetaRisk * 100).toFixed(0)}%</span>
           </div>
           <input
             type="range"
             min="0.05"
-            max="0.45"
+            max="0.40"
             step="0.01"
             value={thetaRisk}
-            onChange={e => onThetaRiskChange(Number(e.target.value))}
+            onChange={(e) => onThetaRiskChange(Number(e.target.value))}
+            className="w-full h-1.5 bg-[#D6E4EE] rounded-lg appearance-none cursor-pointer accent-[#D97706]"
           />
-          <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-            <span>0.05 (Risk-Averse)</span>
-            <span>0.45 (Aggressive)</span>
+          <div className="flex justify-between text-[10px] text-[#829AB1]">
+            <span>Tight (5%)</span>
+            <span>Nominal (20%)</span>
+            <span>Flexible (40%)</span>
           </div>
         </div>
 
-        {/* 3. Target CoA Budget Ceiling */}
-        <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <div className="flex justify-between items-center text-slate-800 font-bold">
-            <span className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                <DollarSign className="w-3.5 h-3.5" />
-              </span>
-              <span>Target C_CoA:</span>
+        {/* 3. Target Freight Rate ($/day) */}
+        <div className="space-y-1.5 bg-[#F5F9FC] p-3 rounded-xl border border-[#E2EDF5]">
+          <div className="flex justify-between items-center text-[#334E68] font-semibold">
+            <span className="flex items-center gap-1.5 text-[#627D98] text-[11px] uppercase font-bold">
+              <DollarSign className="w-3.5 h-3.5 text-[#0D9488]" />
+              Target Rate
             </span>
-            <span className="font-mono text-emerald-700 font-black">${(targetCoACost / 1000).toFixed(1)}k/d</span>
+            <span className="text-[#0D9488] font-bold font-mono tabular-nums">${Number(targetCoACost).toLocaleString()}</span>
           </div>
           <input
             type="range"
-            min="12000"
-            max="32000"
+            min="15000"
+            max="35000"
             step="500"
             value={targetCoACost}
-            onChange={e => onTargetCoACostChange(Number(e.target.value))}
+            onChange={(e) => onTargetCoACostChange(Number(e.target.value))}
+            className="w-full h-1.5 bg-[#D6E4EE] rounded-lg appearance-none cursor-pointer accent-[#0D9488]"
           />
-          <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-            <span>$12k/day</span>
-            <span>$32k/day</span>
+          <div className="flex justify-between text-[10px] text-[#829AB1]">
+            <span>$15k/day</span>
+            <span>$25k/day</span>
+            <span>$35k/day</span>
           </div>
         </div>
 
-        {/* 4. Bunker Fuel Price Offset */}
-        <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <div className="flex justify-between items-center text-slate-800 font-bold">
-            <span className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center">
-                <Fuel className="w-3.5 h-3.5" />
-              </span>
-              <span>Fuel Delta:</span>
+        {/* 4. Singapore Bunker Offset ($/MT) */}
+        <div className="space-y-1.5 bg-[#F5F9FC] p-3 rounded-xl border border-[#E2EDF5]">
+          <div className="flex justify-between items-center text-[#334E68] font-semibold">
+            <span className="flex items-center gap-1.5 text-[#627D98] text-[11px] uppercase font-bold">
+              <Fuel className="w-3.5 h-3.5 text-[#077DB3]" />
+              Fuel Offset
             </span>
-            <span className="font-mono text-purple-700 font-black">{bunkerOffset >= 0 ? `+$${bunkerOffset}` : `-$${Math.abs(bunkerOffset)}`}/MT</span>
+            <span className="text-[#077DB3] font-bold font-mono tabular-nums">
+              {bunkerOffset >= 0 ? `+${bunkerOffset}` : bunkerOffset} $/MT
+            </span>
           </div>
           <input
             type="range"
@@ -164,37 +163,38 @@ export default function WhatIfControls({
             max="250"
             step="10"
             value={bunkerOffset}
-            onChange={e => onBunkerOffsetChange(Number(e.target.value))}
+            onChange={(e) => onBunkerOffsetChange(Number(e.target.value))}
+            className="w-full h-1.5 bg-[#D6E4EE] rounded-lg appearance-none cursor-pointer accent-[#077DB3]"
           />
-          <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+          <div className="flex justify-between text-[10px] text-[#829AB1]">
             <span>-$150/MT</span>
+            <span>Baseline ($0)</span>
             <span>+$250/MT</span>
           </div>
         </div>
 
-        {/* 5. Cargo Parcel Size */}
-        <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-          <div className="flex justify-between items-center text-slate-800 font-bold">
-            <span className="flex items-center gap-1.5">
-              <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center">
-                <Scale className="w-3.5 h-3.5" />
-              </span>
-              <span>Volume:</span>
+        {/* 5. Cargo Parcel Size (Tons) */}
+        <div className="space-y-1.5 bg-[#F5F9FC] p-3 rounded-xl border border-[#E2EDF5]">
+          <div className="flex justify-between items-center text-[#334E68] font-semibold">
+            <span className="flex items-center gap-1.5 text-[#627D98] text-[11px] uppercase font-bold">
+              <Scale className="w-3.5 h-3.5 text-[#4F46E5]" />
+              Parcel Size
             </span>
-            <span className="font-mono text-blue-700 font-black">{(cargoQuantity / 1000).toFixed(0)}k MT</span>
+            <span className="text-[#4F46E5] font-bold font-mono tabular-nums">{Number(cargoQuantity / 1000).toFixed(0)}k MT</span>
           </div>
           <input
             type="range"
             min="25000"
-            max="210000"
+            max="180000"
             step="5000"
             value={cargoQuantity}
-            onChange={e => onCargoQuantityChange(Number(e.target.value))}
+            onChange={(e) => onCargoQuantityChange(Number(e.target.value))}
+            className="w-full h-1.5 bg-[#D6E4EE] rounded-lg appearance-none cursor-pointer accent-[#4F46E5]"
           />
-          <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-            <span>25k (Handy)</span>
-            <span>80k (Panamax)</span>
-            <span>210k (Cape)</span>
+          <div className="flex justify-between text-[10px] text-[#829AB1]">
+            <span>Handy (25k)</span>
+            <span>Panamax (75k)</span>
+            <span>Cape (180k)</span>
           </div>
         </div>
 

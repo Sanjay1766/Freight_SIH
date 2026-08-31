@@ -1,279 +1,279 @@
 {
-  "mape": 4.65,
-  "rmse": 1834.15,
-  "r2": -0.6809,
+  "mape": 5.81,
+  "rmse": 2139.24,
+  "r2": -1.3532,
   "directional_accuracy": 50.0,
   "test_samples": 33,
-  "train_samples": 304,
+  "train_samples": 305,
   "top_features": [
     {
       "feature": "lag_1",
-      "importance_pct": 34.94
+      "importance_pct": 34.69
     },
     {
       "feature": "lag_3",
-      "importance_pct": 22.56
+      "importance_pct": 21.11
     },
     {
       "feature": "rolling_mean_7",
-      "importance_pct": 9.08
+      "importance_pct": 11.68
     },
     {
       "feature": "cos_day_of_year",
-      "importance_pct": 6.62
-    },
-    {
-      "feature": "rolling_mean_14",
-      "importance_pct": 3.33
-    },
-    {
-      "feature": "dxy",
-      "importance_pct": 3.23
+      "importance_pct": 7.47
     },
     {
       "feature": "rolling_vol_30",
-      "importance_pct": 3.18
+      "importance_pct": 3.69
     },
     {
       "feature": "sin_day_of_year",
-      "importance_pct": 3.18
+      "importance_pct": 3.47
+    },
+    {
+      "feature": "rolling_mean_14",
+      "importance_pct": 2.51
+    },
+    {
+      "feature": "dxy",
+      "importance_pct": 2.32
     }
   ],
   "model_type": "CatBoost",
   "iterations": 300,
-  "avg_residual": 1477.0,
-  "avg_residual_pct": 4.65,
+  "avg_residual": 1846.0,
+  "avg_residual_pct": 5.81,
   "backtest_predictions": [
     {
       "index": 0,
-      "actual": 28460,
-      "predicted": 28085,
-      "residual": -375,
-      "errorPct": 1.32
+      "actual": 28992,
+      "predicted": 28127,
+      "residual": -865,
+      "errorPct": 2.98
     },
     {
       "index": 1,
-      "actual": 28992,
-      "predicted": 28055,
-      "residual": -937,
-      "errorPct": 3.23
+      "actual": 29130,
+      "predicted": 28005,
+      "residual": -1125,
+      "errorPct": 3.86
     },
     {
       "index": 2,
-      "actual": 29130,
-      "predicted": 28128,
-      "residual": -1002,
-      "errorPct": 3.44
+      "actual": 28873,
+      "predicted": 28761,
+      "residual": -112,
+      "errorPct": 0.39
     },
     {
       "index": 3,
-      "actual": 28873,
-      "predicted": 28873,
-      "residual": 0,
-      "errorPct": 0.0
+      "actual": 29011,
+      "predicted": 28898,
+      "residual": -113,
+      "errorPct": 0.39
     },
     {
       "index": 4,
-      "actual": 29011,
-      "predicted": 29092,
-      "residual": 81,
-      "errorPct": 0.28
+      "actual": 30094,
+      "predicted": 28755,
+      "residual": -1339,
+      "errorPct": 4.45
     },
     {
       "index": 5,
-      "actual": 30094,
-      "predicted": 28973,
-      "residual": -1121,
-      "errorPct": 3.72
+      "actual": 31078,
+      "predicted": 28719,
+      "residual": -2359,
+      "errorPct": 7.59
     },
     {
       "index": 6,
-      "actual": 31078,
-      "predicted": 29094,
-      "residual": -1984,
-      "errorPct": 6.38
+      "actual": 32223,
+      "predicted": 29347,
+      "residual": -2876,
+      "errorPct": 8.93
     },
     {
       "index": 7,
-      "actual": 32223,
-      "predicted": 29593,
-      "residual": -2630,
-      "errorPct": 8.16
+      "actual": 32185,
+      "predicted": 29718,
+      "residual": -2467,
+      "errorPct": 7.67
     },
     {
       "index": 8,
-      "actual": 32185,
-      "predicted": 29832,
-      "residual": -2353,
-      "errorPct": 7.31
+      "actual": 32569,
+      "predicted": 29667,
+      "residual": -2902,
+      "errorPct": 8.91
     },
     {
       "index": 9,
-      "actual": 32569,
-      "predicted": 30023,
-      "residual": -2546,
-      "errorPct": 7.82
+      "actual": 32466,
+      "predicted": 30314,
+      "residual": -2152,
+      "errorPct": 6.63
     },
     {
       "index": 10,
-      "actual": 32466,
-      "predicted": 30617,
-      "residual": -1849,
-      "errorPct": 5.69
+      "actual": 32442,
+      "predicted": 29798,
+      "residual": -2644,
+      "errorPct": 8.15
     },
     {
       "index": 11,
-      "actual": 32442,
-      "predicted": 30189,
-      "residual": -2253,
-      "errorPct": 6.94
+      "actual": 32542,
+      "predicted": 30060,
+      "residual": -2482,
+      "errorPct": 7.63
     },
     {
       "index": 12,
-      "actual": 32542,
-      "predicted": 30447,
-      "residual": -2095,
-      "errorPct": 6.44
+      "actual": 32139,
+      "predicted": 29616,
+      "residual": -2523,
+      "errorPct": 7.85
     },
     {
       "index": 13,
-      "actual": 32139,
-      "predicted": 30093,
-      "residual": -2046,
-      "errorPct": 6.37
+      "actual": 31082,
+      "predicted": 29621,
+      "residual": -1461,
+      "errorPct": 4.7
     },
     {
       "index": 14,
-      "actual": 31082,
-      "predicted": 30128,
-      "residual": -954,
-      "errorPct": 3.07
+      "actual": 30160,
+      "predicted": 29617,
+      "residual": -543,
+      "errorPct": 1.8
     },
     {
       "index": 15,
-      "actual": 30160,
-      "predicted": 30061,
-      "residual": -99,
-      "errorPct": 0.33
+      "actual": 30350,
+      "predicted": 29722,
+      "residual": -628,
+      "errorPct": 2.07
     },
     {
       "index": 16,
-      "actual": 30350,
-      "predicted": 30012,
-      "residual": -338,
-      "errorPct": 1.11
+      "actual": 30250,
+      "predicted": 29364,
+      "residual": -886,
+      "errorPct": 2.93
     },
     {
       "index": 17,
-      "actual": 30250,
-      "predicted": 29890,
-      "residual": -360,
-      "errorPct": 1.19
+      "actual": 30422,
+      "predicted": 29182,
+      "residual": -1240,
+      "errorPct": 4.07
     },
     {
       "index": 18,
-      "actual": 30422,
-      "predicted": 29582,
-      "residual": -840,
-      "errorPct": 2.76
+      "actual": 30278,
+      "predicted": 28788,
+      "residual": -1490,
+      "errorPct": 4.92
     },
     {
       "index": 19,
-      "actual": 30278,
-      "predicted": 29129,
-      "residual": -1149,
-      "errorPct": 3.79
+      "actual": 30046,
+      "predicted": 29249,
+      "residual": -797,
+      "errorPct": 2.65
     },
     {
       "index": 20,
-      "actual": 30046,
-      "predicted": 29596,
-      "residual": -450,
-      "errorPct": 1.5
+      "actual": 29349,
+      "predicted": 28816,
+      "residual": -533,
+      "errorPct": 1.81
     },
     {
       "index": 21,
-      "actual": 29349,
-      "predicted": 29240,
-      "residual": -109,
-      "errorPct": 0.37
+      "actual": 29640,
+      "predicted": 29162,
+      "residual": -478,
+      "errorPct": 1.61
     },
     {
       "index": 22,
-      "actual": 29640,
-      "predicted": 29656,
-      "residual": 16,
-      "errorPct": 0.05
+      "actual": 30083,
+      "predicted": 28566,
+      "residual": -1517,
+      "errorPct": 5.04
     },
     {
       "index": 23,
-      "actual": 30083,
-      "predicted": 28959,
-      "residual": -1124,
-      "errorPct": 3.74
+      "actual": 30104,
+      "predicted": 28701,
+      "residual": -1403,
+      "errorPct": 4.66
     },
     {
       "index": 24,
-      "actual": 30104,
-      "predicted": 28792,
-      "residual": -1312,
-      "errorPct": 4.36
+      "actual": 30100,
+      "predicted": 28892,
+      "residual": -1208,
+      "errorPct": 4.01
     },
     {
       "index": 25,
-      "actual": 30100,
-      "predicted": 29292,
-      "residual": -808,
-      "errorPct": 2.68
+      "actual": 30501,
+      "predicted": 28798,
+      "residual": -1703,
+      "errorPct": 5.58
     },
     {
       "index": 26,
-      "actual": 30501,
-      "predicted": 29065,
-      "residual": -1436,
-      "errorPct": 4.71
+      "actual": 31032,
+      "predicted": 28727,
+      "residual": -2305,
+      "errorPct": 7.43
     },
     {
       "index": 27,
-      "actual": 31032,
-      "predicted": 28913,
-      "residual": -2119,
-      "errorPct": 6.83
+      "actual": 31943,
+      "predicted": 28804,
+      "residual": -3139,
+      "errorPct": 9.83
     },
     {
       "index": 28,
-      "actual": 31943,
-      "predicted": 29146,
-      "residual": -2797,
-      "errorPct": 8.76
+      "actual": 32797,
+      "predicted": 29350,
+      "residual": -3447,
+      "errorPct": 10.51
     },
     {
       "index": 29,
-      "actual": 32797,
-      "predicted": 29527,
-      "residual": -3270,
-      "errorPct": 9.97
+      "actual": 33473,
+      "predicted": 29550,
+      "residual": -3923,
+      "errorPct": 11.72
     },
     {
       "index": 30,
-      "actual": 33473,
-      "predicted": 29581,
-      "residual": -3892,
-      "errorPct": 11.63
+      "actual": 33096,
+      "predicted": 29489,
+      "residual": -3607,
+      "errorPct": 10.9
     },
     {
       "index": 31,
       "actual": 33096,
-      "predicted": 29923,
-      "residual": -3173,
-      "errorPct": 9.59
+      "predicted": 29672,
+      "residual": -3424,
+      "errorPct": 10.35
     },
     {
       "index": 32,
       "actual": 33096,
-      "predicted": 29862,
-      "residual": -3234,
-      "errorPct": 9.77
+      "predicted": 29875,
+      "residual": -3221,
+      "errorPct": 9.73
     }
   ]
 }

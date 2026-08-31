@@ -56,6 +56,14 @@ class MonteCarloRequest(BaseModel):
 class ScheduleRequest(BaseModel):
     targetCoACost: float = Field(default=21500.0, gt=0)
 
+class CopilotChatRequest(BaseModel):
+    message: str = Field(..., description="User question or strategy query")
+    history: Optional[list] = Field(default_factory=list, description="Recent conversation turns")
+    context: Optional[dict] = Field(default_factory=dict, description="Live dashboard state context")
+
+class BriefingRequest(BaseModel):
+    marketState: Optional[dict] = Field(default_factory=dict, description="Optional custom market state override")
+
 _pipeline_update_lock = Lock()
 
 def _pipeline_refresh_enabled() -> bool:
@@ -334,3 +342,57 @@ def download_model_export(filename: str):
     media_type, dl_name = allowed_files[filename]
     return FileResponse(fpath, media_type=media_type, filename=dl_name)
 
+@router.post("/api/copilot/chat")
+def copilot_chat(req: CopilotChatRequest):
+    """
+    Real-time Groq LLM Maritime Copilot conversational endpoint with live market data injection.
+    """
+    from backend.app.main import state
+    from backend.app.services.groq_service import groq_service
+
+    # Build enriched context if not fully provided by client
+    context = req.context or {}
+    if state.storage and state.storage.df is not None and not state.storage.df.empty:
+        last_row = state.storage.get_latest_row()
+        context.setdefault("spotFreightRate", float(last_row.get("spot_freight_rate", 22000)))
+        context.setdefault("bdi", float(last_row.get("bdi", 1850)))
+        context.setdefault("bunkerFuel", float(last_row.get("bunker_fuel", 629)))
+
+    try:
+        reply = groq_service.query_copilot(
+            user_message=req.message,
+            chat_history=req.history,
+            context_data=context
+        )
+        return {
+            "status": "success",
+            "reply": reply,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Copilot inference error: {str(e)}")
+
+@router.post("/api/ai/briefing")
+def ai_executive_briefing(req: BriefingRequest):
+    """
+    Generates an executive-ready maritime briefing memo powered by Groq LLM.
+    """
+    from backend.app.main import state
+    from backend.app.services.groq_service import groq_service
+
+    market_state = req.marketState or {}
+    if state.storage and state.storage.df is not None and not state.storage.df.empty:
+        last_row = state.storage.get_latest_row()
+        market_state.setdefault("bdi", float(last_row.get("bdi", 1850)))
+        market_state.setdefault("spot_rate", float(last_row.get("spot_freight_rate", 22000)))
+        market_state.setdefault("bunker", float(last_row.get("bunker_fuel", 629)))
+
+    try:
+        memo = groq_service.generate_executive_briefing(market_state)
+        return {
+            "status": "success",
+            "memo": memo,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Executive briefing generation error: {str(e)}")

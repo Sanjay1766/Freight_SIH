@@ -8,89 +8,88 @@ export default function ExecutiveBriefingModal({ isOpen, onClose }) {
 
   const steps = [
     {
-      title: '1. Multi-Source Ingestion & Denton-Cholette Disaggregation',
+      title: '1. Multi-Source Market Data Integration',
       icon: Database,
-      tag: 'Data Pipeline Layer',
+      tag: 'Market Feeds',
       bullets: [
-        'Real-world freight rate proxies (Baltic Dry BDI, Cape BCI, Panamax BPI, Supramax BSI) integrated with Singapore VLSFO bunker, Newcastle coal, Indonesian coal (ICI4), and DXY.',
-        'Solves mixed-frequency data alignment: Monthly Indian coal import tonnage is disaggregated into daily continuous signals using natural cubic spline interpolation.',
-        'Eliminates step-function edge artifacts that disrupt econometric and ML risk models.'
+        'Integrates international benchmark spot rates (Baltic Dry Index, Capesize, Panamax, Supramax) with Singapore marine fuel, coal indices, and foreign exchange rates.',
+        'Continuous smoothing converts monthly trade volumes into daily continuous market signals.',
+        'Eliminates statistical distortions to provide reliable planning metrics for East Coast Indian ports.'
       ],
-      codeSnippet: `// Denton-Cholette Cubic Spline Disaggregation
-const dailySeaborneVolume = cubicSplineInterpolate(monthlyImports, 90);`
+      codeSnippet: `// Continuous Daily Signal Ingestion
+const dailySeaborneVolume = smoothInterpolation(monthlyTradeVolumes, 90);`
     },
     {
-      title: '2. Market Tightness Index (MTI_India)',
+      title: '2. Market Demand & Capacity Balance',
       icon: Gauge,
-      tag: 'Feature Engineering',
+      tag: 'Capacity Tracking',
       bullets: [
-        'Signature OceanPulse domain feature modeling real-time supply/demand tightness in Indian ocean logistics.',
-        'Mathematical Formula: MTI_t = Seaborne_Volume_t / (Fleet_DWT_t * (1 / Fuel_Price_t)).',
-        'Reflects active vessel capacity relative to import demand, driving predictive accuracy for East Coast India routes.'
+        'Evaluates real-time supply and demand tightness across Indian ocean logistics.',
+        'Analyzes active vessel fleet capacity relative to scheduled import tonnages.',
+        'Anticipates port queues and freight pressure across Paradip, Vizag, and Dhamra.'
       ],
-      codeSnippet: `// MTI_India Computation Engine
-const mtiIndia = (seaborneDailyTons / fleetCapacityDWT) * (bunkerPrice / 100);`
+      codeSnippet: `// Market Demand Balance Calculation
+const marketDemandIndex = calculateVesselDemand(cargoDemand, availableFleetSupply);`
     },
     {
-      title: '3. Dual-Branch GARCH(1,1) + CatBoost Stacking Engine (1-90 Days)',
+      title: '3. Predictive Freight Trajectory & Volatility Envelopes',
       icon: TrendingUp,
-      tag: 'Forecasting Engine',
+      tag: '90-Day Trajectory',
       bullets: [
-        'Tier 1 Econometric Branch: GARCH(1,1) estimates conditional variance σ̂²_t and 95% volatility risk cones across 1-90 day horizons.',
-        'Tier 1 ML Branch: CatBoost regressor outputs point rate estimate ŷ_t taking MTI, fuel, DXY, route multipliers, and seasonality as inputs.',
-        'Tier 2 Stacking Layer: Horizon-weighted blend yielding point rate + confidence bands.'
+        'Combines historical trend analysis with forward volatility bounds over 1 to 90-day planning horizons.',
+        'Outputs a daily central forecast alongside 95% upper and lower expected boundaries.',
+        'Enables procurement teams to identify optimal charter windows ahead of market rate surges.'
       ],
-      codeSnippet: `// Stacking Blend & Volatility Risk Cone
-const upper95 = blendedPoint + 1.96 * horizonVolDollars;
-const lower95 = blendedPoint - 1.96 * horizonVolDollars;`
+      codeSnippet: `// Forward Rate Trajectory & Range
+const expectedRateRange = calculateExpectedTrajectory(history, forwardDays);`
     },
     {
-      title: '4. Optimal Market Entry Timing & Contract Structure (Obj A)',
+      title: '4. Optimal Charter Timing & Contract Strategy',
       icon: Clock,
-      tag: 'Objective A • Market Entry',
+      tag: 'Procurement Strategy',
       bullets: [
-        'Identifies ideal forward market entry windows (1-15D spot prompt, 16-45D short-term 3V CoA, 46-90D mid-term CoA) by locating forward rate valleys and volatility troughs.',
-        'Facilitates shift from daily reactive spot charters to multi-voyage contracts with ~6-12% landed cost savings.',
-        'Financial comparison module computes exact dollar savings vs unhedged spot volatility.'
+        'Identifies forward entry windows (1-15D prompt spot, 16-45D 3-voyage term contracts, 46-90D term contracts).',
+        'Helps transition from reactive spot charters to cost-effective volume contracts saving ~6-12% in freight costs.',
+        'Calculates projected dollar savings compared against unhedged spot volatility.'
       ],
-      codeSnippet: `// Optimal Entry Window Detection
-const bestEntry = findOptimalMarketEntryWindows(forecast, currentRate);`
+      codeSnippet: `// Recommended Fixture Timing
+const bestWindow = evaluateProcurementWindows(forwardRates, targetBudget);`
     },
     {
-      title: '5. Dual-Port Vessel Type Optimizer & Lightering Solver (Obj B)',
+      title: '5. Vessel Type Selection & Port Feasibility Solver',
       icon: Anchor,
-      tag: 'Objective B • Vessel Optimization',
+      tag: 'Fleet Optimization',
       bullets: [
-        'Encodes all 7 Indian East Coast Ports (Paradip, Vizag, Gangavaram, Gopalpur, Dhamra, Sandheads, Haldia) + 5 Global Origins (Australia, Indonesia, US, Mozambique, Russia).',
-        'Evaluates Handysize, Supramax, Ultramax, Panamax, Kamsarmax, Capesize, and Newcastlemax against draft, LOA, beam, handling speed, and tariffs.',
-        'Automated lightering logic for Haldia utilizing Sagar-Sandheads anchorage transshipment to prevent draft overflow.'
+        'Evaluates vessel types (Handymax, Supramax, Ultramax, Panamax, Kamsarmax, Capesize) against draft limits at 7 Indian ports.',
+        'Identifies lightering requirements at Sagar-Sandheads Anchorage for deep-draft vessels entering Haldia or Paradip.',
+        'Calculates total landed freight cost per ton including fuel, port tariffs, waiting demurrage, and energy ratings.'
       ],
-      codeSnippet: `// PuLP Vessel Allocation Landed Cost Function
-TotalCost = Freight + BunkerFuel + PortTariffs + Demurrage + LighteringSurcharge;`
+      codeSnippet: `// Fleet Economics & Draft Validation
+const optimalFixture = solveVesselAllocation(originPort, destinationPort, parcelSize);`
     },
     {
-      title: '6. Idle Time Minimization & Backhaul Route Matching (Obj C)',
+      title: '6. Port Turnaround & Return Voyage Optimization',
       icon: ArrowRightLeft,
-      tag: 'Objective C • Deadheading Reduction',
+      tag: 'Voyage Efficiency',
       bullets: [
-        'Full turnaround timeline analysis (loading, sea transit, anchorage queue, discharging).',
-        'Virtual arrival speed optimization strategies to absorb waiting time and cut bunker consumption.',
-        'Triangular backhaul matching pairs discharging vessels with Indian exports (Iron ore from Paradip, Alumina from Vizag) to eliminate uncompensated ballast runs.'
+        'Solves empty deadheading voyages after discharging cargo at Indian East Coast ports.',
+        'Identifies outbound iron ore, bauxite, or coastal coal return cargoes from Vizag, Kakinada, or Paradip.',
+        'Reduces net voyage landed cost by up to $2.50 per ton through backhaul freight revenue.'
       ],
-      codeSnippet: `// Triangular Backhaul Matching
-const netBenefit = backhaulRevenue - incrementalBallastCost; // +$260k-$380k/voyage`
+      codeSnippet: `// Backhaul & Turnaround Calculator
+const turnaroundPlan = findBackhaulOpportunities(dischargePort, vesselType);`
     },
     {
-      title: '7. Multi-Factor Early Warning & Value-at-Risk Radar (Obj D)',
+      title: '7. Weather Swell & Port Delay Monitoring',
       icon: ShieldAlert,
-      tag: 'Objective D • Risk Mitigation',
+      tag: 'Risk Management',
       bullets: [
-        'Real-time risk scoring across 4 pillars: Port Congestion queues, Bay of Bengal monsoon depressions, Singapore bunker fuel price shocks, and maritime chokepoints.',
-        'Parametric Value-at-Risk (VaR 95% and 99%) calculations quantify maximum unhedged procurement budget exposure.',
-        'Generates actionable mitigation advisories including speed adjustment, port diversion, or CoA hedging.'
+        'Monitors Bay of Bengal sea swell, cyclonic depressions, berth occupancy, and lightering disruptions.',
+        'Provides early risk notices to allow proactive laycan adjustment and demurrage prevention.',
+        'Protects shipping schedules and prevents costly vessel waiting times.'
       ],
-      codeSnippet: `// Parametric Value-at-Risk Calculation
-const var95Dollars = totalBudget * (1.645 * dailyVol * Math.sqrt(turnaroundDays));`
+      codeSnippet: `// Port Delay & Weather Radar
+const riskLevel = monitorPortDelays(destinationPort, weatherAlerts);`
     }
   ];
 
@@ -98,94 +97,87 @@ const var95Dollars = totalBudget * (1.645 * dailyVol * Math.sqrt(turnaroundDays)
   const StepIcon = step.icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 text-white rounded-2xl w-full max-w-3xl p-6 shadow-2xl relative my-8 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="terminal-card w-full max-w-2xl border-[#BED9EB] p-6 space-y-5 shadow-2xl bg-white">
         
-        {/* Top Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-orange-500/20 border border-orange-500/30 text-[#FF3B00]">
-              <ShieldCheck className="w-6 h-6" />
+        {/* Modal Header */}
+        <div className="flex items-center justify-between border-b border-[#EDF4F9] pb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#E1EFF8] text-[#077DB3] flex items-center justify-center border border-[#BED9EB]">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-white font-heading">OceanPulse System Architecture Briefing</h2>
-                <span className="px-2 py-0.5 rounded bg-orange-500/20 text-[#FF3B00] text-xs font-semibold font-mono">
-                  Module {currentStep + 1} of {steps.length}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">Complete architectural walkthrough aligned with SIH Problem Statement</p>
+              <h3 className="font-heading font-black text-[#0F2942] text-base">
+                OceanPulse Maritime Platform Overview
+              </h3>
+              <p className="text-xs text-[#627D98]">Architecture & Capabilities Briefing</p>
             </div>
           </div>
-
-          <button onClick={onClose} className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-[#EDF5FA] text-[#627D98] transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Step Content */}
-        <div className="space-y-4 my-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-xl bg-slate-800 border border-slate-700 text-[#FF3B00]">
-              <StepIcon className="w-6 h-6" />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <StepIcon className="w-5 h-5 text-[#077DB3]" />
+              <h4 className="font-bold text-sm text-[#0F2942]">{step.title}</h4>
             </div>
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-[#FF3B00]">{step.tag}</span>
-              <h3 className="text-xl font-bold text-white font-heading">{step.title}</h3>
-            </div>
+            <span className="status-pill status-pill-ocean text-[11px]">
+              {step.tag}
+            </span>
           </div>
 
-          <ul className="space-y-2.5 text-sm text-slate-200">
+          <div className="space-y-2 text-xs text-[#334E68] leading-relaxed">
             {step.bullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-2 bg-slate-800/60 p-3 rounded-xl border border-slate-700/80">
-                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+              <div key={i} className="flex items-start gap-2">
+                <CheckCircle className="w-4 h-4 text-[#0D9488] shrink-0 mt-0.5" />
                 <span>{b}</span>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
 
-          <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-xs text-cyan-300">
-            <div className="text-[10px] text-slate-500 uppercase font-sans font-bold mb-1">Algorithm Execution Engine:</div>
-            <code>{step.codeSnippet}</code>
+          <div className="p-3 rounded-xl bg-[#F5F9FC] border border-[#E2EDF5] font-mono text-xs text-[#077DB3]">
+            <pre className="overflow-x-auto whitespace-pre-wrap">{step.codeSnippet}</pre>
           </div>
         </div>
 
         {/* Navigation Controls */}
-        <div className="flex items-center justify-between border-t border-slate-800 pt-4 mt-6">
-          <button
-            onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
-            disabled={currentStep === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 disabled:opacity-40 hover:bg-slate-700"
-          >
-            <ChevronLeft className="w-4 h-4" /> Previous
-          </button>
-
-          <div className="flex gap-1.5">
-            {steps.map((_, i) => (
-              <span
-                key={i}
-                className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  i === currentStep ? 'bg-[#FF3B00] scale-125' : 'bg-slate-700'
-                }`}
-              />
-            ))}
+        <div className="flex items-center justify-between border-t border-[#EDF4F9] pt-3 text-xs">
+          <div className="text-[#627D98] font-semibold">
+            Step {currentStep + 1} of {steps.length}
           </div>
 
-          {currentStep < steps.length - 1 ? (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setCurrentStep(prev => Math.min(steps.length - 1, prev + 1))}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#FF3B00] text-white hover:bg-orange-600 shadow-md"
+              onClick={() => setCurrentStep((prev) => Math.max(0, prev - 1))}
+              disabled={currentStep === 0}
+              className="btn-terminal-secondary py-1.5 px-3 text-xs disabled:opacity-40"
             >
-              Next Module <ChevronRight className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" /> Previous
             </button>
-          ) : (
-            <button
-              onClick={onClose}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-            >
-              Close Briefing <CheckCircle className="w-4 h-4" />
-            </button>
-          )}
+
+            {currentStep < steps.length - 1 ? (
+              <button
+                onClick={() => setCurrentStep((prev) => Math.min(steps.length - 1, prev + 1))}
+                className="btn-terminal-primary py-1.5 px-3 text-xs"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="btn-terminal-primary py-1.5 px-4 text-xs"
+              >
+                Done
+              </button>
+            )}
+          </div>
         </div>
 
       </div>

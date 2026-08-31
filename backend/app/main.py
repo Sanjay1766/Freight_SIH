@@ -15,7 +15,7 @@ from backend.app.data.storage import MarketDataStorage
 from backend.app.data.fetcher import RealTimeDataFetcher
 from backend.app.features.pipeline import FeatureEngineeringPipeline
 from backend.app.models.garch_model import GarchVolatilityModel
-from backend.app.models.ml_regressor import CatBoostFreightRegressor, LightGBMFreightRegressor
+from backend.app.models.ml_regressor import CatBoostFreightRegressor
 from backend.app.models.ensemble import Tier2StackedEnsemble
 from backend.app.api.routes import router as api_router
 
@@ -106,22 +106,23 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="OceanPulse Maritime Freight Forecasting API",
-    description="Maritime freight decision-support prototype using bundled BDI history, development proxies, GARCH(1,1), CatBoost, and SHAP TreeExplainer.",
+    description="Maritime freight decision-support engine using GARCH(1,1), CatBoost, SHAP TreeExplainer, PuLP MILP solver, and Groq LLM Intelligence.",
     version="2.0.0",
     lifespan=lifespan
 )
 
-# Enable CORS for frontend applications
+# Enable CORS for frontend applications (Local, Render, Netlify, Custom Domains)
 allowed_origins = [
     origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://localhost:3000").split(",")
     if origin.strip()
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=False,
+    allow_origin_regex=r"https://.*\.onrender\.com|https://.*\.netlify\.app|http://localhost:\d+",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -131,4 +132,5 @@ app.include_router(api_router)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

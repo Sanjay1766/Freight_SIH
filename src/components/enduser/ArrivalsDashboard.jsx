@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Ship, AlertTriangle, Search, ChevronRight, X } from 'lucide-react';
+import { Ship, AlertTriangle, Search, ChevronRight, X, CheckCircle2 } from 'lucide-react';
 
 const vessels = [
   {
@@ -7,62 +7,66 @@ const vessels = [
     name: 'MV Sanjay Express',
     type: 'Kamsarmax',
     dwt: '82,500 DWT',
+    draft: '14.2m',
     arrivalDate: 'Aug 31',
     arrivalTime: '10:30 AM',
     status: 'on-time',
-    cargo: 'Thermal Coal',
+    cargo: 'Thermal Coal (GAR 4800)',
     quantity: '75,000 MT',
     from: 'Samarinda, Indonesia',
-    berth: 'Berth 2',
+    berth: 'Paradip Berth 2',
     voyageProgress: 85,
-    lastSeen: '12 min ago',
+    lastSeen: '12 min ago'
   },
   {
     id: 2,
     name: 'CT Paradip Master',
     type: 'Capesize',
     dwt: '180,000 DWT',
-    arrivalDate: 'Sep 2',
-    arrivalTime: '2:15 PM',
+    draft: '16.8m',
+    arrivalDate: 'Sep 02',
+    arrivalTime: '02:15 PM',
     status: 'on-time',
-    cargo: 'Iron Ore',
+    cargo: 'High-Grade Iron Ore Pellets',
     quantity: '165,000 MT',
     from: 'Newcastle, Australia',
-    berth: 'Sagar-Sandheads',
+    berth: 'Sagar-Sandheads Anchorage (Lightering)',
     voyageProgress: 60,
-    lastSeen: '35 min ago',
+    lastSeen: '35 min ago'
   },
   {
     id: 3,
     name: 'Orient Phoenix',
     type: 'Supramax',
     dwt: '58,000 DWT',
-    arrivalDate: 'Sep 4',
-    arrivalTime: '6:00 AM',
+    draft: '12.8m',
+    arrivalDate: 'Sep 04',
+    arrivalTime: '06:00 AM',
     status: 'delayed',
-    delayNote: 'Delayed 14 hrs — monsoon weather in Bay of Bengal',
-    cargo: 'Bauxite',
+    delayNote: 'Delayed 14h — monsoon depression swell in Bay of Bengal',
+    cargo: 'Bauxite & Alumina',
     quantity: '55,000 MT',
     from: 'Maputo, Mozambique',
-    berth: 'Berth 4 — needs confirmation',
+    berth: 'Vizag Outer Harbour Berth 4',
     voyageProgress: 40,
-    lastSeen: '8 min ago',
+    lastSeen: '8 min ago'
   },
   {
     id: 4,
     name: 'Pacific Voyager',
     type: 'Panamax',
     dwt: '76,000 DWT',
-    arrivalDate: 'Sep 6',
+    draft: '14.0m',
+    arrivalDate: 'Sep 06',
     arrivalTime: '11:45 AM',
     status: 'on-time',
-    cargo: 'Thermal Coal',
+    cargo: 'Sub-Bituminous Thermal Coal',
     quantity: '72,000 MT',
     from: 'Taboneo, Indonesia',
-    berth: 'Berth 1',
+    berth: 'Dhamra Bulk Berth 1',
     voyageProgress: 20,
-    lastSeen: '1 hr ago',
-  },
+    lastSeen: '1 hr ago'
+  }
 ];
 
 export default function ArrivalsDashboard() {
@@ -86,43 +90,44 @@ export default function ArrivalsDashboard() {
       {/* Summary Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Vessels Expected', value: vessels.length, color: 'text-white' },
-          { label: 'On Schedule', value: onTime, color: 'text-emerald-400' },
-          { label: 'Delayed', value: delayed, color: 'text-rose-400' },
-          { label: 'Total Cargo', value: '367,000 MT', color: 'text-amber-400' },
+          { label: 'EXPECTED VESSELS', value: vessels.length, sub: 'Next 7 Days', color: 'text-[#0F2942]' },
+          { label: 'ON SCHEDULE', value: onTime, sub: 'Berth Ready', color: 'text-[#0D9488]' },
+          { label: 'WEATHER DELAYED', value: delayed, sub: 'Bay of Bengal Monsoon', color: 'text-[#B45309]' },
+          { label: 'TOTAL INBOUND CARGO', value: '367,000 MT', sub: 'Coal, Ore & Bauxite', color: 'text-[#077DB3]' },
         ].map((s, i) => (
-          <div key={i} className="glass-panel p-4 border border-slate-800">
-            <p className="text-xs text-slate-400 mb-1">{s.label}</p>
-            <p className={`text-2xl font-heading font-black ${s.color}`}>{s.value}</p>
+          <div key={i} className="terminal-card p-4 border-[#D6E4EE] bg-white">
+            <p className="text-[10px] font-mono font-bold text-[#627D98] uppercase tracking-wider mb-1">{s.label}</p>
+            <p className={`text-xl font-bold font-heading ${s.color} tabular-nums`}>{s.value}</p>
+            <p className="text-[11px] text-[#829AB1] mt-1 font-medium">{s.sub}</p>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="glass-panel p-3 flex flex-col sm:flex-row gap-3 border border-slate-800">
+      {/* Search & Filter Bar */}
+      <div className="terminal-card p-3 flex flex-col sm:flex-row gap-3 border-[#D6E4EE] bg-white">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#829AB1] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search vessel, cargo or origin..."
-            className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-slate-600"
+            placeholder="Filter by vessel name, cargo type, or loading port..."
+            className="w-full pl-9 pr-4 py-2 bg-[#F5F9FC] border border-[#DCE8F0] rounded-lg text-xs font-medium text-[#0F2942] placeholder:text-[#829AB1] focus:outline-none focus:border-[#077DB3]"
           />
         </div>
-        <div className="flex gap-1.5 shrink-0">
+        <div className="flex gap-1.5 shrink-0 text-xs">
           {[
-            { key: 'all', label: 'All' },
+            { key: 'all', label: 'All Gates' },
             { key: 'on-time', label: 'On Schedule' },
-            { key: 'delayed', label: 'Delayed' },
+            { key: 'delayed', label: 'Delayed Queue' },
           ].map(f => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 filter === f.key
-                  ? 'bg-slate-700 text-white'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-[#077DB3] text-white shadow-xs'
+                  : 'bg-[#F0F6FA] text-[#486581] hover:bg-[#E1EFF8] hover:text-[#077DB3] border border-[#DCE8F0]'
               }`}
             >
               {f.label}
@@ -139,14 +144,16 @@ export default function ArrivalsDashboard() {
             <div
               key={vessel.id}
               onClick={() => setSelected(vessel)}
-              className={`glass-panel p-4 sm:p-5 cursor-pointer border transition-all hover:border-slate-700 ${
-                isDelayed ? 'border-rose-500/30' : 'border-slate-800'
+              className={`terminal-card p-4 cursor-pointer transition-all hover:border-[#BED9EB] bg-white ${
+                isDelayed ? 'border-[#FDE68A] bg-[#FFFDF5]' : 'border-[#D6E4EE]'
               }`}
             >
               <div className="flex items-center gap-4">
                 {/* Icon */}
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                  isDelayed ? 'bg-rose-500/15 text-rose-400' : 'bg-slate-800 text-slate-300'
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                  isDelayed
+                    ? 'bg-[#FEF3C7] border-[#FDE68A] text-[#B45309]'
+                    : 'bg-[#E1EFF8] border-[#BED9EB] text-[#077DB3]'
                 }`}>
                   <Ship className="w-5 h-5" />
                 </div>
@@ -154,20 +161,19 @@ export default function ArrivalsDashboard() {
                 {/* Main Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                    <span className="font-heading font-bold text-white text-sm">{vessel.name}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-md font-medium ${
-                      isDelayed
-                        ? 'bg-rose-500/15 text-rose-300'
-                        : 'bg-emerald-500/15 text-emerald-300'
+                    <span className="font-bold text-[#0F2942] text-sm font-heading">{vessel.name}</span>
+                    <span className="text-xs text-[#627D98]">({vessel.type} • {vessel.dwt} • Draft {vessel.draft})</span>
+                    <span className={`status-pill text-[10px] py-0 px-2 ${
+                      isDelayed ? 'status-pill-amber' : 'status-pill-emerald'
                     }`}>
-                      {isDelayed ? 'Delayed' : 'On Schedule'}
+                      {isDelayed ? 'Delayed (+14h)' : 'On Schedule'}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 truncate">
-                    {vessel.from} → {vessel.berth} &nbsp;·&nbsp; {vessel.cargo} ({vessel.quantity})
+                  <p className="text-xs text-[#486581] truncate font-medium">
+                    {vessel.from} ➔ <span className="text-[#077DB3] font-semibold">{vessel.berth}</span> &nbsp;•&nbsp; {vessel.cargo} ({vessel.quantity})
                   </p>
                   {isDelayed && (
-                    <p className="text-xs text-rose-400 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-[#B45309] mt-1 flex items-center gap-1 font-medium">
                       <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                       {vessel.delayNote}
                     </p>
@@ -176,21 +182,21 @@ export default function ArrivalsDashboard() {
 
                 {/* ETA + Arrow */}
                 <div className="text-right shrink-0 hidden sm:block">
-                  <p className="text-sm font-semibold text-white">{vessel.arrivalDate}</p>
-                  <p className="text-xs text-slate-400">{vessel.arrivalTime}</p>
+                  <p className="text-xs font-bold text-[#0F2942] tabular-nums font-mono">{vessel.arrivalDate}, {vessel.arrivalTime}</p>
+                  <p className="text-[11px] text-[#829AB1]">AIS updated {vessel.lastSeen}</p>
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+                <ChevronRight className="w-4 h-4 text-[#829AB1] shrink-0" />
               </div>
 
-              {/* Progress bar */}
+              {/* Progress Bar */}
               <div className="mt-3 flex items-center gap-3">
-                <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                <div className="flex-1 h-1.5 bg-[#EDF4F9] rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full ${isDelayed ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                    className={`h-full rounded-full ${isDelayed ? 'bg-[#D97706]' : 'bg-[#077DB3]'}`}
                     style={{ width: `${vessel.voyageProgress}%` }}
                   />
                 </div>
-                <span className="text-xs text-slate-500 shrink-0">{vessel.voyageProgress}% en route</span>
+                <span className="text-[11px] text-[#627D98] font-medium shrink-0">{vessel.voyageProgress}% En Route</span>
               </div>
             </div>
           );
@@ -199,50 +205,53 @@ export default function ArrivalsDashboard() {
 
       {/* Detail Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-lg border border-slate-700 p-6 space-y-5 shadow-2xl">
-            <div className="flex items-start justify-between">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="terminal-card w-full max-w-lg border-[#BED9EB] p-6 space-y-4 shadow-xl bg-white">
+            <div className="flex items-start justify-between border-b border-[#EDF4F9] pb-3">
               <div>
-                <h3 className="text-xl font-heading font-black text-white">{selected.name}</h3>
-                <p className="text-sm text-slate-400 mt-0.5">{selected.type} · {selected.dwt}</p>
+                <h3 className="text-lg font-heading font-black text-[#0F2942]">{selected.name}</h3>
+                <p className="text-xs text-[#627D98] mt-0.5">{selected.type} · {selected.dwt} · Draft {selected.draft}</p>
               </div>
-              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400">
+              <button onClick={() => setSelected(null)} className="p-1.5 rounded-lg hover:bg-[#EDF5FA] text-[#627D98]">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-2 gap-2.5 text-xs">
               {[
-                { label: 'Arriving', value: `${selected.arrivalDate}, ${selected.arrivalTime}` },
+                { label: 'Laycan Window ETA', value: `${selected.arrivalDate}, ${selected.arrivalTime}` },
                 { label: 'Assigned Berth', value: selected.berth },
-                { label: 'Cargo', value: selected.cargo },
-                { label: 'Quantity', value: selected.quantity },
-                { label: 'Origin', value: selected.from },
-                { label: 'Last AIS Update', value: selected.lastSeen },
+                { label: 'Cargo Specification', value: selected.cargo },
+                { label: 'Parcel Tonnage', value: selected.quantity },
+                { label: 'Loading Port', value: selected.from },
+                { label: 'Live Telemetry', value: selected.lastSeen },
               ].map((item, i) => (
-                <div key={i} className="bg-slate-900 rounded-xl p-3 border border-slate-800">
-                  <p className="text-xs text-slate-500 mb-0.5">{item.label}</p>
-                  <p className="font-semibold text-white">{item.value}</p>
+                <div key={i} className="bg-[#F5F9FC] rounded-xl p-3 border border-[#E2EDF5]">
+                  <p className="text-[10px] text-[#627D98] mb-0.5 uppercase font-bold">{item.label}</p>
+                  <p className="font-bold text-[#0F2942]">{item.value}</p>
                 </div>
               ))}
             </div>
 
             {selected.delayNote && (
-              <div className="flex items-start gap-2 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-sm text-rose-300">
+              <div className="flex items-start gap-2 p-3 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl text-xs font-medium text-[#B45309]">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{selected.delayNote}</span>
               </div>
             )}
 
-            <div className="flex gap-3 pt-1">
-              <button onClick={() => setSelected(null)} className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold text-slate-300 transition-colors">
+            <div className="flex gap-2 pt-2 border-t border-[#EDF4F9]">
+              <button
+                onClick={() => setSelected(null)}
+                className="btn-terminal-secondary flex-1 justify-center text-xs"
+              >
                 Close
               </button>
               <button
-                onClick={() => { alert(`Berth confirmed for ${selected.name}`); setSelected(null); }}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-400 hover:to-red-400 text-white text-sm font-bold transition-all"
+                onClick={() => { alert(`Berth allocation locked for ${selected.name}`); setSelected(null); }}
+                className="btn-terminal-primary flex-1 justify-center text-xs"
               >
-                Confirm Berth
+                <CheckCircle2 className="w-3.5 h-3.5" /> Confirm Berth Assignment
               </button>
             </div>
           </div>

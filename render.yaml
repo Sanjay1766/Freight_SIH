@@ -1,0 +1,44 @@
+services:
+  # -------------------------------------------------------------
+  # 1. OceanPulse Python FastAPI Backend Web Service
+  # -------------------------------------------------------------
+  - type: web
+    name: oceanpulse-backend
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT --workers 1"
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: CORS_ORIGINS
+        value: "http://localhost:5173,http://127.0.0.1:5173,https://oceanpulse-frontend.onrender.com"
+      - key: ENABLE_PIPELINE_REFRESH
+        value: "false"
+      - key: GROQ_API_KEY
+        sync: false
+
+  # -------------------------------------------------------------
+  # 2. OceanPulse React Vite Frontend Static Site
+  # -------------------------------------------------------------
+  - type: static
+    name: oceanpulse-frontend
+    region: oregon
+    plan: free
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: "./dist"
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=3600
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://oceanpulse-backend.onrender.com
+      - key: VITE_GROQ_API_KEY
+        sync: false

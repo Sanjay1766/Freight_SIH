@@ -272,3 +272,36 @@ export async function triggerLivePipelineUpdate() {
   }
 }
 
+export async function sendCopilotMessage(message, history = [], context = {}) {
+  try {
+    const res = await fetch(`${API_BASE}/api/copilot/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, history, context }),
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    const data = await res.json();
+    return data.reply;
+  } catch (err) {
+    console.warn('Groq Copilot API error:', err.message);
+    return null;
+  }
+}
+
+export async function generateAIBriefing(marketState = {}) {
+  try {
+    const res = await fetch(`${API_BASE}/api/ai/briefing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marketState }),
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!res.ok) throw new Error(`HTTP error: ${res.status}`);
+    const data = await res.json();
+    return data.memo;
+  } catch (err) {
+    console.warn('Groq AI Briefing API error:', err.message);
+    return null;
+  }
+}
