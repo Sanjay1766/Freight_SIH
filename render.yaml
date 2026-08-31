@@ -23,8 +23,9 @@ services:
   # -------------------------------------------------------------
   # 2. OceanPulse React Vite Frontend Static Site
   # -------------------------------------------------------------
-  - type: static
+  - type: web
     name: oceanpulse-frontend
+    runtime: static
     region: oregon
     plan: free
     buildCommand: "npm install && npm run build"
