@@ -362,7 +362,7 @@ def copilot_chat(req: CopilotChatRequest):
     Real-time Groq LLM Maritime Copilot conversational endpoint with live market data injection.
     """
     from backend.app.main import state
-    from backend.app.services.groq_service import groq_service
+    from backend.app.services.groq_service import groq_service, get_groq_status
 
     # Build enriched context if not fully provided by client
     context = req.context or {}
@@ -378,13 +378,26 @@ def copilot_chat(req: CopilotChatRequest):
             chat_history=req.history,
             context_data=context
         )
+        groq_status = get_groq_status()
         return {
             "status": "success",
             "reply": reply,
+            "groq_available": groq_status["groq_available"],
+            "mode": groq_status["mode"],
             "timestamp": datetime.utcnow().isoformat()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Copilot inference error: {str(e)}")
+
+
+@router.get("/api/copilot/status")
+def copilot_status():
+    """
+    Returns whether the Groq LLM copilot is live or operating in offline rule-based mode.
+    Useful for the frontend to conditionally display LLM availability indicators.
+    """
+    from backend.app.services.groq_service import get_groq_status
+    return get_groq_status()
 
 @router.post("/api/ai/briefing")
 def ai_executive_briefing(req: BriefingRequest):

@@ -4,7 +4,14 @@ from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger("OceanPulse.GroqService")
 
-DEFAULT_GROQ_KEY = os.getenv("GROQ_API_KEY", "")
+_raw_key = os.getenv("GROQ_API_KEY", "").strip()
+if not _raw_key:
+    logger.warning(
+        "[GROQ_API_KEY missing] GROQ_API_KEY environment variable is not set or empty. "
+        "The AI Copilot will operate in OFFLINE / rule-based fallback mode. "
+        "Set GROQ_API_KEY in your Render dashboard (Environment > Secret Files) to enable live LLM responses."
+    )
+DEFAULT_GROQ_KEY = _raw_key
 
 SYSTEM_PROMPT = """You are the OceanPulse Maritime AI Copilot & Senior Chartering Strategist for Indian bulk commodity procurement.
 You possess deep quantitative and operational knowledge of:
@@ -41,10 +48,24 @@ class GroqMaritimeIntelligence:
             try:
                 from groq import Groq
                 self.client = Groq(api_key=self.api_key)
-                logger.info("Groq Maritime Intelligence client initialized successfully.")
-            except Exception as e:
-                logger.warning(f"Could not initialize Groq client: {e}")
+                logger.info(
+                    "[GROQ_OK] Groq Maritime Intelligence client initialized successfully "
+                    "(key ends …%s).", self.api_key[-4:]
+                )
+            except ImportError:
+                logger.error(
+                    "[GROQ_ERROR] 'groq' package not installed. "
+                    "Add 'groq>=0.9.0' to requirements.txt and redeploy."
+                )
                 self.client = None
+            except Exception as e:
+                logger.warning(
+                    "[GROQ_ERROR] Could not initialize Groq client: %s. "
+                    "Copilot will operate in offline mode.", e
+                )
+                self.client = None
+        else:
+            self.client = None
 
     def query_copilot(
         self,
@@ -139,16 +160,45 @@ Current Metrics:
         return self._fallback_briefing(market_state)
 
     def _rule_based_fallback(self, query: str, context: Optional[Dict[str, Any]]) -> str:
+        """Rule-based offline responses used when GROQ_API_KEY is not set or the API call fails."""
+        offline_prefix = (
+            "> ⚠️ **Offline Mode** — AI Copilot is operating without a live LLM connection. "
+            "Responses below are rule-based estimates.\n\n"
+        )
         q_lower = query.lower()
         if "capesize" in q_lower or "panamax" in q_lower or "dhamra" in q_lower:
-            return "Based on East Coast physical limits, **Dhamra Port** (17.5m draft, 310m LOA) fully accommodates **Capesize vessels (120k-180k MT)**, reducing landed costs to ~$21.40/MT versus ~$25.80/MT on twin Panamax shipments—generating ~$528,000 in net economies of scale."
+            answer = (
+                "Based on East Coast physical limits, **Dhamra Port** (17.5m draft, 310m LOA) "
+                "fully accommodates **Capesize vessels (120k-180k MT)**, reducing landed costs "
+                "to ~$21.40/MT versus ~$25.80/MT on twin Panamax shipments — "
+                "generating ~$528,000 in net economies of scale."
+            )
         elif "haldia" in q_lower or "sandheads" in q_lower or "lightering" in q_lower:
-            return "Haldia Dock Complex is restricted by an 8.5m river draft. Large shipments must lighter at **Sagar-Sandheads Anchorage** ($3.20/MT lightering barge cost). For deep-draft full shipments, consider routing to Dhamra (17.5m) or Gangavaram (18.5m)."
+            answer = (
+                "Haldia Dock Complex is restricted by an 8.5m river draft. Large shipments must "
+                "lighter at **Sagar-Sandheads Anchorage** ($3.20/MT lightering barge cost). "
+                "For deep-draft full shipments, consider routing to Dhamra (17.5m) or Gangavaram (18.5m)."
+            )
         elif "coa" in q_lower or "spot" in q_lower or "savings" in q_lower:
-            return "Our dual-branch GARCH + CatBoost engine recommends locking a **3-Voyage Contract of Affreightment (CoA)** to capture a 6% contract discount while eliminating upper 95% tail-risk volatility exposure, saving ~$120,000–$180,000 per voyage."
+            answer = (
+                "Our dual-branch GARCH + CatBoost engine recommends locking a "
+                "**3-Voyage Contract of Affreightment (CoA)** to capture a 6% contract discount "
+                "while eliminating upper 95% tail-risk volatility exposure, "
+                "saving ~$120,000–$180,000 per voyage."
+            )
         elif "backhaul" in q_lower or "vizag" in q_lower:
-            return "At Visakhapatnam, outbound **Alumina and Finished Steel Coils (35k-60k MT)** bound for the UAE/Oman yield +$260,000 net voyage benefit and eliminate 65% of uncompensated ballast deadheading."
-        return "Market analysis confirms current East Coast spot rates are hovering near baseline averages. Volatility is within manageable bounds. Review our Prescriptive Optimizer for exact draft-compliant parcel allocation."
+            answer = (
+                "At Visakhapatnam, outbound **Alumina and Finished Steel Coils (35k-60k MT)** "
+                "bound for the UAE/Oman yield +$260,000 net voyage benefit and eliminate "
+                "65% of uncompensated ballast deadheading."
+            )
+        else:
+            answer = (
+                "Market analysis confirms current East Coast spot rates are hovering near "
+                "baseline averages. Volatility is within manageable bounds. Review our "
+                "Prescriptive Optimizer for exact draft-compliant parcel allocation."
+            )
+        return offline_prefix + answer
 
     def _fallback_briefing(self, state: Dict[str, Any]) -> str:
         return f"""### 🌊 OceanPulse Executive Maritime Briefing
@@ -160,3 +210,12 @@ Current Metrics:
 
 # Global Singleton Instance
 groq_service = GroqMaritimeIntelligence()
+
+
+def get_groq_status() -> dict:
+    """Returns Groq service availability for use in health endpoints."""
+    return {
+        "groq_available": groq_service.client is not None,
+        "mode": "live_llm" if groq_service.client is not None else "offline_rule_based",
+        "key_configured": bool(DEFAULT_GROQ_KEY),
+    }
