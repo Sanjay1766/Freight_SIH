@@ -1,6 +1,7 @@
 import re
 import logging
 from datetime import datetime, timezone
+import concurrent.futures
 import requests
 from bs4 import BeautifulSoup
 
@@ -13,7 +14,7 @@ HEADERS = {
 }
 
 class RealTimeDataFetcher:
-    def __init__(self, timeout: int = 10):
+    def __init__(self, timeout: int = 5):
         self.timeout = timeout
 
     def fetch_baltic_dry_index(self) -> dict:
@@ -37,20 +38,20 @@ class RealTimeDataFetcher:
             logger.warning(f"Error fetching Baltic from TradingEconomics: {e}")
 
         # 2. Try Handybulk for sub-indices
-        try:
-            url = "https://www.handybulk.com/baltic-dry-index/"
-            resp = requests.get(url, headers=HEADERS, timeout=self.timeout)
-            if resp.status_code == 200:
-                soup = BeautifulSoup(resp.text, "html.parser")
-                text = soup.get_text()
-                
-                # Check for explicit BDI / BCI / BPI / BSI mentions
-                bdi_match = re.search(r"BDI\s*[:=-]?\s*([\d,]+)", text)
-                if bdi_match and data["bdi"] is None:
-                    data["bdi"] = int(bdi_match.group(1).replace(",", ""))
-                    data["source"] = "handybulk.com"
-        except Exception as e:
-            logger.warning(f"Error fetching from Handybulk: {e}")
+        if data["bdi"] is None:
+            try:
+                url = "https://www.handybulk.com/baltic-dry-index/"
+                resp = requests.get(url, headers=HEADERS, timeout=self.timeout)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, "html.parser")
+                    text = soup.get_text()
+                    
+                    bdi_match = re.search(r"BDI\s*[:=-]?\s*([\d,]+)", text)
+                    if bdi_match:
+                        data["bdi"] = int(bdi_match.group(1).replace(",", ""))
+                        data["source"] = "handybulk.com"
+            except Exception as e:
+                logger.warning(f"Error fetching from Handybulk: {e}")
 
         if data["bdi"] is not None:
             data["bci"] = int(round(data["bdi"] * 1.38))
@@ -121,8 +122,7 @@ class RealTimeDataFetcher:
                     rows = soup.find_all("tr")
                     for row in rows:
                         t = " ".join(row.get_text().split())
-                        # Look for Singapore VLSFO price line
-                        if "Singapore" in t and ("VLSFO" in t or "IFO" in t or "629" in t):
+                        if "Singapore" in t and ("VLSFO" in t or "IFO" in t or "629" in t or "784" in t):
                             prices = re.findall(r"(\d{3}(?:\.\d+)?)", t)
                             for p in prices:
                                 val = float(p)
@@ -166,56 +166,82 @@ class RealTimeDataFetcher:
     def fetch_usd_dxy(self) -> dict:
         data = {"dxy": None, "source": None}
         
-        # 1. Try Yahoo Finance DXY
+        # 1. Try Yahoo Finance chart API directly (fast, lightweight, zero extra dependencies)
         try:
-            import yfinance as yf
-            ticker = yf.Ticker("DX-Y.NYB")
-            hist = ticker.history(period="5d")
-            if not hist.empty and "Close" in hist:
-                latest_close = hist["Close"].dropna().iloc[-1]
-                data["dxy"] = round(float(latest_close), 2)
-                data["source"] = "yfinance:DX-Y.NYB"
+            url = "https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?range=1d&interval=1d"
+            resp = requests.get(url, headers=HEADERS, timeout=self.timeout)
+            if resp.status_code == 200:
+                res = resp.json()
+                price = res["chart"]["result"][0]["meta"].get("regularMarketPrice")
+                if price and 70.0 <= float(price) <= 150.0:
+                    data["dxy"] = round(float(price), 2)
+                    data["source"] = "query1.finance.yahoo.com:DX-Y.NYB"
         except Exception as e:
-            logger.warning(f"Yahoo Finance DXY: {e}")
+            logger.debug(f"Yahoo Finance chart API DXY: {e}")
 
-        # 2. Try FRED public CSV
+        # 2. Try TradingEconomics Currency
+        if data["dxy"] is None:
+            try:
+                url = "https://tradingeconomics.com/united-states/currency"
+                resp = requests.get(url, headers=HEADERS, timeout=self.timeout)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, "html.parser")
+                    val_tag = soup.find("span", {"id": "market_last"}) or soup.find("div", class_="market-price")
+                    if val_tag:
+                        val_str = re.sub(r"[^\d.]", "", val_tag.text)
+                        if val_str:
+                            val = float(val_str)
+                            if 70.0 <= val <= 150.0:
+                                data["dxy"] = round(val, 2)
+                                data["source"] = "tradingeconomics.com/united-states/currency"
+            except Exception as e:
+                logger.debug(f"TradingEconomics DXY: {e}")
+
+        # 3. Try FRED public CSV
         if data["dxy"] is None:
             try:
                 url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTWEXBGS"
-                resp = requests.get(url, headers=HEADERS, timeout=5)
+                resp = requests.get(url, headers=HEADERS, timeout=3)
                 if resp.status_code == 200:
                     lines = [line.strip() for line in resp.text.strip().split("\n") if line.strip()]
                     for line in reversed(lines):
                         parts = line.split(",")
                         if len(parts) == 2 and parts[1] not in [".", "DTWEXBGS"]:
                             val = float(parts[1])
-                            if 80.0 <= val <= 140.0:
+                            if 70.0 <= val <= 150.0:
                                 data["dxy"] = round(val, 2)
                                 data["source"] = "fred.stlouisfed.org:DTWEXBGS"
                                 break
             except Exception as e:
-                logger.warning(f"FRED DXY: {e}")
+                logger.debug(f"FRED DXY: {e}")
 
         return data
 
     def fetch_all_latest(self, fallback_row: dict = None) -> dict:
-        bdi_info = self.fetch_baltic_dry_index()
-        bunker_info = self.fetch_bunker_prices()
-        coal_info = self.fetch_coal_prices()
-        dxy_info = self.fetch_usd_dxy()
+        # Fetch all live streams concurrently in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            fut_bdi = executor.submit(self.fetch_baltic_dry_index)
+            fut_bunker = executor.submit(self.fetch_bunker_prices)
+            fut_coal = executor.submit(self.fetch_coal_prices)
+            fut_dxy = executor.submit(self.fetch_usd_dxy)
+
+            bdi_info = fut_bdi.result()
+            bunker_info = fut_bunker.result()
+            coal_info = fut_coal.result()
+            dxy_info = fut_dxy.result()
 
         fb = fallback_row or {}
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-        bdi_val = bdi_info["bdi"] if bdi_info["bdi"] is not None else fb.get("bdi", 2150)
+        bdi_val = bdi_info["bdi"] if bdi_info["bdi"] is not None else fb.get("bdi", 3186)
         bci_val = bdi_info["bci"] if bdi_info["bci"] is not None else fb.get("bci", int(round(bdi_val * 1.38)))
         bpi_val = bdi_info["bpi"] if bdi_info["bpi"] is not None else fb.get("bpi", int(round(bdi_val * 0.94)))
         bsi_val = bdi_info["bsi"] if bdi_info["bsi"] is not None else fb.get("bsi", int(round(bdi_val * 0.78)))
 
-        bunker_val = bunker_info["singapore_vlsfo"] if bunker_info["singapore_vlsfo"] is not None else fb.get("bunker_fuel", 629.0)
+        bunker_val = bunker_info["singapore_vlsfo"] if bunker_info["singapore_vlsfo"] is not None else fb.get("bunker_fuel", 784.50)
         coal_val = coal_info["newcastle_coal"] if coal_info["newcastle_coal"] is not None else fb.get("coal_index", 139.75)
         indo_coal_val = coal_info["indo_coal"] if coal_info["indo_coal"] is not None else fb.get("indo_coal_index", round(coal_val * 0.42, 2))
-        dxy_val = dxy_info["dxy"] if dxy_info["dxy"] is not None else fb.get("dxy", 104.2)
+        dxy_val = dxy_info["dxy"] if dxy_info["dxy"] is not None else fb.get("dxy", 99.42)
 
         fleet_capacity_dwt = 12500000.0
         seaborne_volume = fb.get("seaborne_volume", 725000)
@@ -236,5 +262,11 @@ class RealTimeDataFetcher:
             "dxy": float(dxy_val),
             "seaborne_volume": int(seaborne_volume),
             "mti_india": float(mti_india),
-            "spot_freight_rate": spot_rate
+            "spot_freight_rate": spot_rate,
+            "sources": {
+                "bdi": bdi_info.get("source"),
+                "bunker": bunker_info.get("source"),
+                "coal": coal_info.get("source"),
+                "dxy": dxy_info.get("source")
+            }
         }

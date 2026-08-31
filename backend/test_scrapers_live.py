@@ -6,17 +6,33 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
 }
 
-# 1. Check FRED DTWEXBGS
-print("1. Testing FRED DTWEXBGS:")
+# 1. Check DXY Sources
+print("1. Testing US Dollar Index (DXY) Sources:")
 try:
-    r = requests.get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTWEXBGS", headers=HEADERS, timeout=10)
-    print("FRED status:", r.status_code)
-    lines = [l.strip() for l in r.text.strip().split("\n") if l.strip()]
-    print("FRED last 5 observations:")
-    for l in lines[-5:]:
-        print("  ", l)
+    r = requests.get("https://query1.finance.yahoo.com/v8/finance/chart/DX-Y.NYB?range=1d&interval=1d", headers=HEADERS, timeout=5)
+    if r.status_code == 200:
+        price = r.json()["chart"]["result"][0]["meta"].get("regularMarketPrice")
+        print("  Yahoo Finance DXY Quote:", price)
+    else:
+        print("  Yahoo Finance DXY HTTP Status:", r.status_code)
 except Exception as e:
-    print("FRED err:", e)
+    print("  Yahoo Finance DXY err:", e)
+
+try:
+    r = requests.get("https://tradingeconomics.com/united-states/currency", headers=HEADERS, timeout=5)
+    soup = BeautifulSoup(r.text, "html.parser")
+    val_tag = soup.find("span", {"id": "market_last"}) or soup.find("div", class_="market-price")
+    print("  TradingEconomics USD DXY:", val_tag.text.strip() if val_tag else "Not found")
+except Exception as e:
+    print("  TradingEconomics DXY err:", e)
+
+try:
+    r = requests.get("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTWEXBGS", headers=HEADERS, timeout=3)
+    print("  FRED status:", r.status_code)
+    lines = [l.strip() for l in r.text.strip().split("\n") if l.strip()]
+    print("  FRED last 2 rows:", lines[-2:])
+except Exception as e:
+    print("  FRED err:", e)
 
 # 2. Check Handybulk
 print("\n2. Testing Handybulk HTML structure:")

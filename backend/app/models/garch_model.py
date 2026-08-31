@@ -153,14 +153,16 @@ class GarchVolatilityModel:
         elif len(vol_pct) > n:
             vol_pct = vol_pct[-n:]
 
+        vol_pct = np.nan_to_num(vol_pct, nan=1.61, posinf=5.0, neginf=0.5)
         vol_dec = vol_pct / 100.0
-        upper_95 = np.round(rates.values * (1.0 + 1.96 * vol_dec)).astype(int)
-        lower_95 = np.maximum(7500, np.round(rates.values * (1.0 - 1.96 * vol_dec))).astype(int)
+        rates_clean = np.nan_to_num(rates.values.astype(float), nan=22000.0)
+        upper_95 = np.round(rates_clean * (1.0 + 1.96 * vol_dec)).astype(int)
+        lower_95 = np.maximum(7500, np.round(rates_clean * (1.0 - 1.96 * vol_dec))).astype(int)
 
         return pd.DataFrame({
             "date": dates.values,
             "spot_freight_rate": rates.values,
-            "garch_vol_pct": vol_pct,
+            "garch_vol_pct": np.round(vol_pct, 2),
             "garch_upper_95": upper_95,
             "garch_lower_95": lower_95
         })

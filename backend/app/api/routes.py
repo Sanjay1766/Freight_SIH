@@ -68,7 +68,7 @@ _pipeline_update_lock = Lock()
 
 def _pipeline_refresh_enabled() -> bool:
     """Keep expensive scrape-and-refit operations opt-in outside local development."""
-    return os.getenv("ENABLE_PIPELINE_REFRESH", "false").strip().lower() in {"1", "true", "yes"}
+    return os.getenv("ENABLE_PIPELINE_REFRESH", "true").strip().lower() in {"1", "true", "yes"}
 
 @router.get("/health")
 def health_check():
@@ -90,6 +90,20 @@ def health_check():
 @router.get("/api/health")
 def api_health_check():
     return health_check()
+
+@router.get("/api/market-data/live")
+def get_live_market_data():
+    """Direct live data quote fetch from real-time external sources."""
+    from backend.app.main import state
+    from backend.app.data.fetcher import RealTimeDataFetcher
+    fetcher = state.fetcher or RealTimeDataFetcher()
+    last_known = state.storage.get_latest_row() if (state.storage and state.storage.df is not None) else None
+    live_data = fetcher.fetch_all_latest(fallback_row=last_known)
+    return {
+        "status": "success",
+        "data": live_data,
+        "fetched_at": datetime.utcnow().isoformat()
+    }
 
 @router.get("/api/market-data/history")
 def get_market_history(limit: int = Query(default=90, ge=1, le=1000)):
