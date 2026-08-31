@@ -36,8 +36,8 @@ export default function AlertsPanel() {
     {
       id: 4,
       type: 'info',
-      title: 'Fuel Costs Are Slightly Lower Today',
-      message: 'Bunker fuel price has dropped to $629/MT, which is slightly cheaper than last week. This reduces shipping costs marginally.',
+      title: 'Fuel Benchmark Updated (Singapore VLSFO)',
+      message: 'Singapore VLSFO bunker fuel is tracking at $784.50/MT on Ship & Bunker. Virtual Arrival slow-steaming continues to optimize voyage fuel efficiency.',
       time: '3 hours ago',
       icon: Info,
       action: null

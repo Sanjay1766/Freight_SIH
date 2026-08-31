@@ -23,7 +23,7 @@ def test_full_suite():
         origin_port_key="Indonesia_Samarinda",
         dest_port_key="Paradip",
         cargo_qty_tons=75000,
-        bunker_price=629.0,
+        bunker_price=784.50,
         horizon_forecast={"pointForecast": 22000, "volatilityDollars": 850}
     )
     print("Paradip Optimal Vessel:", res_paradip["bestSolution"]["vessel"]["name"], "Class:", res_paradip["bestSolution"]["vessel"]["vesselClass"])
@@ -36,7 +36,7 @@ def test_full_suite():
         origin_port_key="Indonesia_Samarinda",
         dest_port_key="Haldia",
         cargo_qty_tons=75000,
-        bunker_price=629.0,
+        bunker_price=784.50,
         horizon_forecast={"pointForecast": 22000, "volatilityDollars": 850}
     )
     print("Haldia Lightering Required:", res_haldia["bestSolution"]["requiresLightering"])
@@ -49,7 +49,7 @@ def test_full_suite():
         best_vessel=res_paradip["bestSolution"],
         dest_port_key="Paradip",
         distance_nm=2520,
-        bunker_price=629.0
+        bunker_price=784.50
     )
     print("Base Speed:", v_arr["baseSpeedKnots"], "knots -> Optimal Slow Speed:", v_arr["optimalSpeedKnots"], "knots")
     print("Fuel Saved:", v_arr["fuelSavedTons"], "tons -> Net Benefit:", f"${v_arr['netEconomicBenefitUSD']:,.2f}")
@@ -63,7 +63,7 @@ def test_full_suite():
     assert backhaul["netBenefitUSD"] > 100000
 
     print("\n=== TEST 4: Multi-Origin Landed Cost & Energy Yield Arbitrage ===")
-    arbitrage = compute_multi_origin_arbitrage(dest_port_key="Paradip", cargo_qty_tons=75000, bunker_price=629.0)
+    arbitrage = compute_multi_origin_arbitrage(dest_port_key="Paradip", cargo_qty_tons=75000, bunker_price=784.50)
     print(f"Evaluated {len(arbitrage)} global origins:")
     for a in arbitrage:
         print(f"  - {a['country']} ({a['commodity']}): FOB ${a['fobPriceUSD']}/MT | Freight ${a['freightCostPerTon']}/MT | Landed ${a['landedCostPerTon']}/MT | Energy ${a['energyCostPerGJ']}/GJ")
@@ -79,7 +79,7 @@ def test_full_suite():
     assert all(v["targetStatus"] in {"WITHIN_TARGET", "DEFER_TARGET_EXCEEDED"} for v in schedule["voyages"])
 
     print("\n=== TEST 6: 1,000-Path Monte Carlo Stochastic Simulation ===")
-    mc = run_monte_carlo_stress_test(spot_rate=22000, daily_vol=0.0155, cargo_qty_tons=75000, bunker_price=629.0, iterations=1000)
+    mc = run_monte_carlo_stress_test(spot_rate=22000, daily_vol=0.0155, cargo_qty_tons=75000, bunker_price=784.50, iterations=1000)
     print(f"Monte Carlo Mean Cost: ${mc['meanLandedCostPerTon']}/MT | 95% VaR: ${mc['var95CostPerTon']}/MT | 99% VaR: ${mc['var99CostPerTon']}/MT")
     print(f"Generated {len(mc['histogram'])} probability density histogram bins.")
     assert len(mc['histogram']) == 15

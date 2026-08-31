@@ -3,7 +3,7 @@ import { Ship, Fuel, Gauge, Activity, Leaf, TrendingUp } from 'lucide-react';
 
 export default function KPIOverviewBar({ lastHistoryPoint, selectedHorizonForecast = {} }) {
   const bdiVal = lastHistoryPoint?.bdi ? Number(lastHistoryPoint.bdi).toLocaleString() : '1,850';
-  const bunkerVal = Number(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0).toFixed(1);
+  const bunkerVal = Number(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 784.50).toFixed(1);
   const mtiVal = Number(lastHistoryPoint?.mtiIndia || lastHistoryPoint?.mti_india || 0.319).toFixed(3);
   const spotRateVal = lastHistoryPoint?.spotFreightRate || lastHistoryPoint?.spot_freight_rate 
     ? Number(lastHistoryPoint.spotFreightRate || lastHistoryPoint.spot_freight_rate).toLocaleString() 

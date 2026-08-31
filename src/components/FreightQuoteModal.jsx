@@ -8,7 +8,7 @@ export default function FreightQuoteModal({
   horizonForecast,
   selectedHorizonForecast,
   decisionTrigger = {},
-  bunkerPrice = 629.0
+  bunkerPrice = 784.50
 }) {
   const [commodity, setCommodity] = useState('Thermal Coal');
   const [origin, setOrigin] = useState('Indonesia_Samarinda');

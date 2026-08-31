@@ -10,7 +10,7 @@ def run_monte_carlo_stress_test(
     spot_rate: float = 22000.0,
     daily_vol: float = 0.0155,
     cargo_qty_tons: int = 75000,
-    bunker_price: float = 629.0,
+    bunker_price: float = 784.50,
     iterations: int = 1000
 ) -> dict:
     # Input Guardrails & Bounded Validation

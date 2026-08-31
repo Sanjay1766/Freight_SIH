@@ -23,7 +23,7 @@ class MixedIntegerVesselSolver:
         origin_port_key: str = "Indonesia_Samarinda",
         dest_port_key: str = "Paradip",
         cargo_qty_tons: int = 75000,
-        bunker_price: float = 629.0,
+        bunker_price: float = 784.50,
         horizon_forecast: dict = None,
         theta_risk: float = 0.20,
         target_coa_cost: float = 21500.0

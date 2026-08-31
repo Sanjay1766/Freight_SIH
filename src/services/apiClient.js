@@ -30,7 +30,7 @@ export function normalizeRecord(r, idx = 0) {
     garchVolPct: Number(r.garchVolPct || r.garch_vol_pct || 1.61),
     garchUpper95: Number(r.garchUpper95 || r.garch_upper_95 || Math.round(Number(r.spotFreightRate || r.spot_freight_rate || 33161) * 1.032)),
     garchLower95: Number(r.garchLower95 || r.garch_lower_95 || Math.round(Number(r.spotFreightRate || r.spot_freight_rate || 33161) * 0.968)),
-    bunkerFuel: Number(r.bunkerFuel || r.bunker_fuel || 629.0),
+    bunkerFuel: Number(r.bunkerFuel || r.bunker_fuel || 784.50),
     coalIndex: Number(r.coalIndex || r.coal_index || 139.75),
     indoCoalIndex: Number(r.indoCoalIndex || r.indo_coal_index || 58.7),
     dxy: Number(r.dxy || 99.16),

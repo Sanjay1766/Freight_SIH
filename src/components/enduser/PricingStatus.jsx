@@ -33,7 +33,7 @@ export default function PricingStatus() {
     },
     {
       name: 'SINGAPORE VLSFO 0.5%',
-      value: '$629.00',
+      value: '$784.50',
       unit: '/ Metric Ton',
       trend: 'down',
       change: '-$5.20 (-0.8%)',

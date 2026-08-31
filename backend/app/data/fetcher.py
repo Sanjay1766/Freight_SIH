@@ -60,33 +60,85 @@ class RealTimeDataFetcher:
         return data
 
     def fetch_bunker_prices(self) -> dict:
-        data = {"singapore_vlsfo": None, "rotterdam_vlsfo": None, "source": None}
+        data = {
+            "singapore_vlsfo": None,
+            "singapore_ifo380": None,
+            "singapore_mgo": None,
+            "rotterdam_vlsfo": None,
+            "source": None
+        }
+        
+        # 1. Primary: Singapore dedicated terminal page on Ship & Bunker
         try:
-            url = "https://shipandbunker.com/prices"
-            resp = requests.get(url, headers=HEADERS, timeout=self.timeout)
+            singapore_url = "https://shipandbunker.com/prices/apac/sea/sg-sin-singapore"
+            resp = requests.get(singapore_url, headers=HEADERS, timeout=self.timeout)
             if resp.status_code == 200:
                 soup = BeautifulSoup(resp.text, "html.parser")
-                rows = soup.find_all("tr")
-                for row in rows:
-                    t = " ".join(row.get_text().split())
-                    # Look for Singapore VLSFO price line
-                    if "Singapore" in t and ("629" in t or "VLSFO" in t or "IFO" in t):
-                        prices = re.findall(r"(\d{3}(?:\.\d+)?)", t)
-                        for p in prices:
-                            val = float(p)
-                            if 450.0 <= val <= 950.0:
+                
+                # Check VLSFO price table
+                vlsfo_tbl = soup.find("table", class_=re.compile(r"price-table\s+VLSFO", re.I))
+                if vlsfo_tbl:
+                    price_td = vlsfo_tbl.find("td", headers=re.compile(r"price-VLSFO", re.I))
+                    if price_td:
+                        m = re.search(r"(\d+(?:\.\d+)?)", price_td.text)
+                        if m:
+                            val = float(m.group(1))
+                            if 400.0 <= val <= 1200.0:
                                 data["singapore_vlsfo"] = val
-                                data["source"] = "shipandbunker.com/prices"
-                                break
-                    if "Rotterdam" in t and ("VLSFO" in t or "538" in t or "IFO" in t):
-                        prices = re.findall(r"(\d{3}(?:\.\d+)?)", t)
-                        for p in prices:
-                            val = float(p)
-                            if 400.0 <= val <= 900.0:
-                                data["rotterdam_vlsfo"] = val
-                                break
+                                data["source"] = "shipandbunker.com/prices/apac/sea/sg-sin-singapore"
+
+                # Check IFO380 price table
+                ifo_tbl = soup.find("table", class_=re.compile(r"price-table\s+IFO380", re.I))
+                if ifo_tbl:
+                    price_td = ifo_tbl.find("td", headers=re.compile(r"price-IFO380", re.I))
+                    if price_td:
+                        m = re.search(r"(\d+(?:\.\d+)?)", price_td.text)
+                        if m:
+                            val = float(m.group(1))
+                            if 350.0 <= val <= 1000.0:
+                                data["singapore_ifo380"] = val
+
+                # Check MGO price table
+                mgo_tbl = soup.find("table", class_=re.compile(r"price-table\s+MGO", re.I))
+                if mgo_tbl:
+                    price_td = mgo_tbl.find("td", headers=re.compile(r"price-MGO", re.I))
+                    if price_td:
+                        m = re.search(r"(\d+(?:\.\d+)?)", price_td.text)
+                        if m:
+                            val = float(m.group(1))
+                            if 500.0 <= val <= 1500.0:
+                                data["singapore_mgo"] = val
         except Exception as e:
-            logger.warning(f"Error fetching from Ship & Bunker: {e}")
+            logger.warning(f"Error fetching from Singapore Ship & Bunker: {e}")
+
+        # 2. Secondary fallback: Global Ship & Bunker prices overview
+        if data["singapore_vlsfo"] is None:
+            try:
+                url = "https://shipandbunker.com/prices"
+                resp = requests.get(url, headers=HEADERS, timeout=self.timeout)
+                if resp.status_code == 200:
+                    soup = BeautifulSoup(resp.text, "html.parser")
+                    rows = soup.find_all("tr")
+                    for row in rows:
+                        t = " ".join(row.get_text().split())
+                        # Look for Singapore VLSFO price line
+                        if "Singapore" in t and ("VLSFO" in t or "IFO" in t or "629" in t):
+                            prices = re.findall(r"(\d{3}(?:\.\d+)?)", t)
+                            for p in prices:
+                                val = float(p)
+                                if 450.0 <= val <= 950.0:
+                                    data["singapore_vlsfo"] = val
+                                    data["source"] = "shipandbunker.com/prices"
+                                    break
+                        if "Rotterdam" in t and ("VLSFO" in t or "538" in t or "IFO" in t):
+                            prices = re.findall(r"(\d{3}(?:\.\d+)?)", t)
+                            for p in prices:
+                                val = float(p)
+                                if 400.0 <= val <= 900.0:
+                                    data["rotterdam_vlsfo"] = val
+                                    break
+            except Exception as e:
+                logger.warning(f"Error fetching from Ship & Bunker overview: {e}")
 
         return data
 

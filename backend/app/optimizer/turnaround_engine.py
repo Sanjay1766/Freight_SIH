@@ -6,7 +6,7 @@ def compute_virtual_arrival_optimization(
     best_vessel: dict,
     dest_port_key: str,
     distance_nm: int,
-    bunker_price: float = 629.0
+    bunker_price: float = 784.50
 ) -> dict:
     """
     Virtual Arrival Slow-Steaming Propulsion Law:

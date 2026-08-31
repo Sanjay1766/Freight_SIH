@@ -1,10 +1,10 @@
 {
-  "lag_1": 34.69,
+  "lag_1": 34.7,
   "lag_3": 21.11,
   "lag_7": 1.17,
   "lag_14": 1.06,
   "lag_30": 0.79,
-  "rolling_mean_7": 11.68,
+  "rolling_mean_7": 11.67,
   "rolling_mean_14": 2.51,
   "rolling_mean_30": 0.52,
   "rolling_vol_7": 1.02,
@@ -22,7 +22,7 @@
   "bci_bdi_ratio": 0.42,
   "bpi_bdi_ratio": 0.25,
   "sin_day_of_year": 3.47,
-  "cos_day_of_year": 7.47,
+  "cos_day_of_year": 7.48,
   "is_monsoon_season": 0.53,
   "is_prewinter_restocking": 0.6
 }

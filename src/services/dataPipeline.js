@@ -78,7 +78,7 @@ export function generateHistoricalData(scenarioModifiers = {}) {
 
   const series = [];
   let currentBDI = 2150 + bdiOffset;
-  let currentBunker = 640 * bunkerFuelMultiplier;
+  let currentBunker = 784.5 * bunkerFuelMultiplier;
   let currentCoalIndex = 138.5;
   let currentIndoCoal = 58.0; // ICI4 4200 GAR ($/MT)
   let currentDXY = 104.2;

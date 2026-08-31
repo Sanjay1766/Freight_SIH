@@ -42,15 +42,20 @@ try:
 except Exception as e:
     print("TradingEconomics Baltic err:", e)
 
-# 4. Check Ship & Bunker
+# 4. Check Ship & Bunker (Singapore)
 print("\n4. Testing Ship & Bunker Singapore VLSFO:")
 try:
-    r = requests.get("https://shipandbunker.com/prices", headers=HEADERS, timeout=10)
+    r = requests.get("https://shipandbunker.com/prices/apac/sea/sg-sin-singapore", headers=HEADERS, timeout=10)
     soup = BeautifulSoup(r.text, "html.parser")
+    vlsfo_tbl = soup.find("table", class_=re.compile(r"price-table\s+VLSFO", re.I))
+    if vlsfo_tbl:
+        price_td = vlsfo_tbl.find("td", headers=re.compile(r"price-VLSFO", re.I))
+        print("  Singapore VLSFO Table price:", price_td.text.strip() if price_td else "Not found")
     for tr in soup.find_all("tr"):
         t = tr.get_text()
-        if "Singapore" in t and "629" in t or ("Singapore" in t and ("VLSFO" in t or "IFO" in t)):
-            print("  Singapore row:", " ".join(t.split()))
+        if "VLSFO" in t or "IFO380" in t:
+            print("  Singapore row:", " ".join(t.split())[:100])
+            break
 except Exception as e:
     print("Ship & Bunker err:", e)
 

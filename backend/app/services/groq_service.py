@@ -66,7 +66,7 @@ class GroqMaritimeIntelligence:
             origin = context_data.get("selectedOriginKey", "Indonesia_Samarinda")
             spot = context_data.get("spotFreightRate", 22000)
             bdi = context_data.get("bdi", 1850)
-            bunker = context_data.get("bunkerFuel", 629)
+            bunker = context_data.get("bunkerFuel", 784.50)
             action = context_data.get("recommendedAction", "EVALUATE_COA")
             vol_ratio = context_data.get("volMetricRatio", 0.14)
             pt_fc = context_data.get("pointForecast", 22000)
@@ -117,7 +117,7 @@ class GroqMaritimeIntelligence:
 Current Metrics:
 - BDI: {market_state.get('bdi', 1850)}
 - Spot Daily Rate: ${market_state.get('spot_rate', 22000):,.0f}/day
-- Singapore Bunker: ${market_state.get('bunker', 629):,.0f}/MT
+- Singapore Bunker: ${market_state.get('bunker', 784.50):,.0f}/MT
 - GARCH 30-Day Volatility: {market_state.get('vol_pct', 2.1):.1f}% daily
 - Prescriptive Trigger: {market_state.get('trigger', 'OPTIMAL_ENTRY_WINDOW')}
 """
@@ -152,7 +152,7 @@ Current Metrics:
 
     def _fallback_briefing(self, state: Dict[str, Any]) -> str:
         return f"""### 🌊 OceanPulse Executive Maritime Briefing
-**Current Macro Outlook**: Baltic Dry Index is at {state.get('bdi', 1850)} with Singapore VLSFO fuel at ${state.get('bunker', 629)}/MT. The GARCH(1,1) econometric cone projects stable-to-compressing volatility over the next 30 days.
+**Current Macro Outlook**: Baltic Dry Index is at {state.get('bdi', 1850)} with Singapore VLSFO fuel at ${state.get('bunker', 784.50)}/MT. The GARCH(1,1) econometric cone projects stable-to-compressing volatility over the next 30 days.
 
 **East Coast Indian Operations**: Deep-water berths at Dhamra (17.5m) and Gangavaram (18.5m) offer maximum parcel scale. Haldia bound tonnage should account for Sagar-Sandheads lightering overhead.
 

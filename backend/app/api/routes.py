@@ -29,7 +29,7 @@ class OptimizationRequest(BaseModel):
     originPortKey: str = "Indonesia_Samarinda"
     destinationPortKey: str = "Paradip"
     cargoQuantityTons: int = 75000
-    bunkerPrice: float = 629.0
+    bunkerPrice: float = 784.50
     selectedHorizon: int = 15
     thetaRisk: float = 0.20
     targetCoACost: float = 21500.0
@@ -38,19 +38,19 @@ class TurnaroundRequest(BaseModel):
     destinationPortKey: str = "Paradip"
     originPortKey: str = "Indonesia_Samarinda"
     cargoQuantityTons: int = 75000
-    bunkerPrice: float = 629.0
+    bunkerPrice: float = 784.50
 
 class ArbitrageRequest(BaseModel):
     destinationPortKey: str = "Paradip"
     cargoQuantityTons: int = 75000
-    bunkerPrice: float = 629.0
+    bunkerPrice: float = 784.50
     spotDailyRate: float = 22000.0
 
 class MonteCarloRequest(BaseModel):
     spotRate: float = 22000.0
     dailyVol: float = 0.0155
     cargoQuantityTons: int = 75000
-    bunkerPrice: float = 629.0
+    bunkerPrice: float = 784.50
     iterations: int = 1000
 
 class ScheduleRequest(BaseModel):
@@ -356,7 +356,7 @@ def copilot_chat(req: CopilotChatRequest):
         last_row = state.storage.get_latest_row()
         context.setdefault("spotFreightRate", float(last_row.get("spot_freight_rate", 22000)))
         context.setdefault("bdi", float(last_row.get("bdi", 1850)))
-        context.setdefault("bunkerFuel", float(last_row.get("bunker_fuel", 629)))
+        context.setdefault("bunkerFuel", float(last_row.get("bunker_fuel", 784.50)))
 
     try:
         reply = groq_service.query_copilot(
@@ -385,7 +385,7 @@ def ai_executive_briefing(req: BriefingRequest):
         last_row = state.storage.get_latest_row()
         market_state.setdefault("bdi", float(last_row.get("bdi", 1850)))
         market_state.setdefault("spot_rate", float(last_row.get("spot_freight_rate", 22000)))
-        market_state.setdefault("bunker", float(last_row.get("bunker_fuel", 629)))
+        market_state.setdefault("bunker", float(last_row.get("bunker_fuel", 784.50)))
 
     try:
         memo = groq_service.generate_executive_briefing(market_state)

@@ -6,7 +6,7 @@ export default function EarlyWarningRiskPanel({ riskAnalysis = {}, selectedPortK
   const overallRiskStatus = riskAnalysis?.overallRiskStatus || 'NORMAL';
   const congestion = riskAnalysis?.congestion || { score: 24, severity: 'LOW', advice: 'Normal berthing queue across East Coast terminals.' };
   const weather = riskAnalysis?.weather || { score: 42, level: 'MODERATE', advisory: 'Sea state normal; winds <15 knots.' };
-  const bunker = riskAnalysis?.bunker || { score: 28, level: 'MODERATE', currentPrice: 629.0, impact: '+$186/day rate sensitivity' };
+  const bunker = riskAnalysis?.bunker || { score: 28, level: 'MODERATE', currentPrice: 784.50, impact: '+$186/day rate sensitivity' };
   const chokepoint = riskAnalysis?.chokepoint || { score: 20, level: 'LOW', lane: selectedPortKey || 'Paradip' };
   const varMetrics = riskAnalysis?.varMetrics || {
     totalBudgetExposure: 466880,
@@ -130,7 +130,7 @@ export default function EarlyWarningRiskPanel({ riskAnalysis = {}, selectedPortK
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
               bunker.level === 'CRITICAL' ? 'bg-rose-100 text-rose-800' : 'bg-purple-100 text-purple-800'
             }`}>
-              ${Number(bunker.currentPrice || 629.0).toFixed(1)}/MT
+              ${Number(bunker.currentPrice || 784.50).toFixed(1)}/MT
             </span>
           </div>
 
@@ -144,7 +144,7 @@ export default function EarlyWarningRiskPanel({ riskAnalysis = {}, selectedPortK
 
           <div className="pt-2 border-t border-slate-100 text-[11px] font-mono text-slate-500 flex justify-between">
             <span>Singapore VLSFO:</span>
-            <strong className="text-purple-600 font-bold">${Number(bunker.currentPrice || 629.0).toFixed(1)}</strong>
+            <strong className="text-purple-600 font-bold">${Number(bunker.currentPrice || 784.50).toFixed(1)}</strong>
           </div>
         </div>
 

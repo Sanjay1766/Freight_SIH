@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Timer, ArrowRightLeft, CheckCircle2, AlertCircle, ShieldAlert, Sparkles, Gauge, Fuel, Leaf, DollarSign } from 'lucide-react';
 import { BACKHAUL_OPPORTUNITIES, EAST_COAST_PORT_MATRIX, calculateVirtualArrival } from '../services/optimizerEngine';
 
-export default function IdleScenarioManager({ bestSolution, selectedPortKey, cargoQuantity, bunkerPrice = 629.0, backendTurnaround }) {
+export default function IdleScenarioManager({ bestSolution, selectedPortKey, cargoQuantity, bunkerPrice = 784.50, backendTurnaround }) {
   const [selectedBackhaul, setSelectedBackhaul] = useState(BACKHAUL_OPPORTUNITIES[0]);
   const [slowSteamingSpeed, setSlowSteamingSpeed] = useState(11.2);
 

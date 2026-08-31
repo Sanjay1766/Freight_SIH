@@ -5,7 +5,7 @@ import { EAST_COAST_PORT_MATRIX, solveVesselAllocation } from '../services/optim
 export default function PrescriptiveOptimizerPanel({
   selectedHorizonForecast = {},
   decisionTrigger = {},
-  bunkerPrice = 629.0,
+  bunkerPrice = 784.50,
   cargoQuantity = 75000,
   onPortChange,
   selectedPortKey = 'Paradip',

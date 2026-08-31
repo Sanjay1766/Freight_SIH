@@ -300,7 +300,9 @@ export default function App() {
     };
   }, [forecast, selectedHorizon]);
 
-  const lastHistoryPoint = (historySeries && historySeries.length > 0) ? historySeries[historySeries.length - 1] : {};
+  const lastHistoryPoint = useMemo(() => {
+    return (historySeries && historySeries.length > 0) ? historySeries[historySeries.length - 1] : {};
+  }, [historySeries]);
 
   // 3. Decision Trigger
   const decisionTrigger = useMemo(() => {
@@ -315,7 +317,7 @@ export default function App() {
     if (backendOptimization && backendOptimization.bestSolution) {
       return backendOptimization;
     }
-    const bunkerPrice = (lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset;
+    const bunkerPrice = (lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 784.50) + bunkerOffset;
     return solveVesselAllocation({
       originPortKey: selectedOriginKey,
       destinationPortKey: selectedPortKey,
@@ -597,7 +599,7 @@ export default function App() {
                 <PrescriptiveOptimizerPanel
                   selectedHorizonForecast={selectedHorizonForecast}
                   decisionTrigger={decisionTrigger}
-                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset}
+                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 784.50) + bunkerOffset}
                   cargoQuantity={cargoQuantity}
                   selectedPortKey={selectedPortKey}
                   onPortChange={setSelectedPortKey}
@@ -615,7 +617,7 @@ export default function App() {
                   selectedPortKey={selectedPortKey}
                   onPortChange={setSelectedPortKey}
                   cargoQuantity={cargoQuantity}
-                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset}
+                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 784.50) + bunkerOffset}
                   selectedHorizonForecast={selectedHorizonForecast}
                   decisionTrigger={decisionTrigger}
                   onSelectOrigin={handleSelectArbitrageOrigin}
@@ -638,7 +640,7 @@ export default function App() {
                   bestSolution={optimizationResults.bestSolution}
                   selectedPortKey={selectedPortKey}
                   cargoQuantity={cargoQuantity}
-                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset}
+                  bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 784.50) + bunkerOffset}
                   backendTurnaround={backendTurnaround}
                 />
 
@@ -787,7 +789,7 @@ export default function App() {
         horizonForecast={selectedHorizonForecast}
         selectedHorizonForecast={selectedHorizonForecast}
         decisionTrigger={decisionTrigger}
-        bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 629.0) + bunkerOffset}
+        bunkerPrice={(lastHistoryPoint?.bunkerFuel || lastHistoryPoint?.bunker_fuel || 784.50) + bunkerOffset}
         onOpenReport={() => {
           setIsQuoteModalOpen(false);
           setIsReportModalOpen(true);

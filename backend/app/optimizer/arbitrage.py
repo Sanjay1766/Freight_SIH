@@ -8,7 +8,7 @@ from backend.app.optimizer.ports_matrix import ORIGIN_PORTS_MATRIX, get_nautical
 def compute_multi_origin_arbitrage(
     dest_port_key: str = "Paradip",
     cargo_qty_tons: int = 75000,
-    bunker_price: float = 629.0,
+    bunker_price: float = 784.50,
     spot_daily_rate: float = 22000.0
 ) -> list[dict]:
     results = []
