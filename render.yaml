@@ -16,7 +16,7 @@ services:
       - key: CORS_ORIGINS
         value: "http://localhost:5173,http://127.0.0.1:5173,https://oceanpulse-frontend.onrender.com"
       - key: ENABLE_PIPELINE_REFRESH
-        value: "false"
+        value: "true"
       - key: GROQ_API_KEY
         sync: false
 
