@@ -1,16 +1,21 @@
 import os
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 PRELOADED_DIR = os.path.join(DATA_DIR, "preloaded")
 KOYFIN_RAW_PATH = os.path.join(PRELOADED_DIR, "koyfin_2026-08-29.csv")
 CSV_PATH = os.path.join(PRELOADED_DIR, "historical_market_data.csv")
+
+# live_market_data.csv lives alongside storage.py and IS committed to git.
+# This means Render (ephemeral filesystem) always boots from the latest seed,
+# not from the stale 2026-08-28 historical CSV.
 LIVE_CSV_PATH = os.path.join(DATA_DIR, "live_market_data.csv")
+
 
 def ensure_dirs():
     os.makedirs(PRELOADED_DIR, exist_ok=True)
+
 
 def generate_base_historical_dataset(csv_path: str = CSV_PATH) -> pd.DataFrame:
     """
@@ -19,15 +24,15 @@ def generate_base_historical_dataset(csv_path: str = CSV_PATH) -> pd.DataFrame:
     interface development, but are not a substitute for licensed market data.
     """
     ensure_dirs()
-    
+
     # Check if raw Koyfin CSV is available in preloaded directory
     if os.path.exists(KOYFIN_RAW_PATH):
         df_raw = pd.read_csv(KOYFIN_RAW_PATH)
         df_raw.columns = [c.replace('"', '').strip() for c in df_raw.columns]
-        
+
         date_col = 'Date' if 'Date' in df_raw.columns else df_raw.columns[0]
         close_col = [c for c in df_raw.columns if 'Close' in c or 'BDIY' in c][-1]
-        
+
         df_raw['date'] = pd.to_datetime(df_raw[date_col], format='%m-%d-%Y')
         df_raw['bdi'] = df_raw[close_col].astype(float)
         df_raw = df_raw.sort_values('date').reset_index(drop=True)
@@ -39,7 +44,7 @@ def generate_base_historical_dataset(csv_path: str = CSV_PATH) -> pd.DataFrame:
         df_daily = pd.DataFrame({'date': all_dates})
         df = pd.merge(df_daily, df_raw[['date', 'bdi']], on='date', how='left')
         df['bdi'] = df['bdi'].ffill().bfill()
-        
+
         n = len(df)
         np.random.seed(42)
 
@@ -65,10 +70,15 @@ def generate_base_historical_dataset(csv_path: str = CSV_PATH) -> pd.DataFrame:
         df['seaborne_volume'] = np.round(daily_vol).astype(int)
 
         fleet_dwt = 12500000.0
-        df['mti_india'] = np.round((df['seaborne_volume'] / fleet_dwt) * (df['bunker_fuel'] / 100.0) * 0.85, 3)
+        df['mti_india'] = np.round(
+            (df['seaborne_volume'] / fleet_dwt) * (df['bunker_fuel'] / 100.0) * 0.85, 3
+        )
 
         df['spot_freight_rate'] = np.round(
-            df['bdi'] * 9.85 + df['mti_india'] * 4350.0 + (df['bunker_fuel'] - 600.0) * 13.5 + np.random.normal(0, 80, n)
+            df['bdi'] * 9.85
+            + df['mti_india'] * 4350.0
+            + (df['bunker_fuel'] - 600.0) * 13.5
+            + np.random.normal(0, 80, n)
         ).astype(int)
 
         df['date'] = df['date'].dt.strftime('%Y-%m-%d')
@@ -83,10 +93,18 @@ def generate_base_historical_dataset(csv_path: str = CSV_PATH) -> pd.DataFrame:
 
     raise FileNotFoundError(f"Neither {KOYFIN_RAW_PATH} nor {csv_path} was found.")
 
+
 class MarketDataStorage:
     def __init__(self, data_path: str = None):
         ensure_dirs()
-        self.data_path = data_path or (LIVE_CSV_PATH if os.path.exists(LIVE_CSV_PATH) else CSV_PATH)
+        if data_path:
+            self.data_path = data_path
+        elif os.path.exists(LIVE_CSV_PATH) and os.path.getsize(LIVE_CSV_PATH) > 1000:
+            # Prefer live_market_data.csv — committed to git so Render always has
+            # fresh data (through the last local commit) on every cold start.
+            self.data_path = LIVE_CSV_PATH
+        else:
+            self.data_path = CSV_PATH
         self.df = self.load_data()
 
     def load_data(self) -> pd.DataFrame:
